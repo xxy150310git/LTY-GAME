@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>洛天依接歌词 · 锦依卫特训</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="deco deco-1"></div>
+  <div class="deco deco-2"></div>
+  <div class="deco deco-3"></div>
+
+  <main class="card">
+
+    <!-- 顶部标题 -->
+    <header class="head">
+      <h1 class="title">洛天依接歌词</h1>
+      <p class="subtitle">锦依卫特训</p>
+    </header>
+
+    <!-- 第一屏：开始 -->
+    <section class="screen is-active" id="screen-start">
+      <p class="intro-line" id="mode-intro">我说上半句，你选出下半句。</p>
+      <p class="intro-line intro-dim">四选一，答对一题加 <b>10</b> 分。</p>
+
+      <div class="seg-block">
+        <span class="seg-label">玩法</span>
+        <div class="segmented" id="mode-group"></div>
+      </div>
+
+      <div class="seg-block" id="size-block">
+        <span class="seg-label">每轮题数</span>
+        <div class="segmented" id="size-group"></div>
+      </div>
+
+      <!-- 点开歌曲库弹窗 -->
+      <button class="filter-entry" id="btn-filter" type="button">
+        <span class="filter-entry-box">
+          <span class="filter-entry-title">歌曲库</span>
+          <span class="filter-entry-sub" id="pool-info">加载中……</span>
+        </span>
+        <span class="filter-entry-arrow">›</span>
+      </button>
+
+      <!-- 复习依下：看已勾选这几首歌的歌词 -->
+      <button class="btn btn-ghost" id="btn-review" type="button">复习依下</button>
+
+      <button class="btn btn-main" id="btn-start" type="button">开始特训</button>
+    </section>
+
+    <!-- 第二屏：答题 -->
+    <section class="screen" id="screen-quiz">
+      <div class="meta">
+        <span class="meta-progress" id="progress">第 1 / 10 题</span>
+        <span class="meta-score" id="score-now">0 分</span>
+      </div>
+
+      <div class="song-chip" id="song-name">《蝴蝶》</div>
+
+      <p class="question" id="question-line">上半句</p>
+
+      <div class="options" id="options"></div>
+
+      <p class="feedback" id="feedback"></p>
+    </section>
+
+    <!-- 第三屏：结果 -->
+    <section class="screen" id="screen-result">
+      <h2 class="result-title">特训结束</h2>
+
+      <div class="result-box">
+        <div class="result-row">
+          <span class="result-label">总分</span>
+          <span class="result-value" id="final-score">0</span>
+        </div>
+        <div class="result-row">
+          <span class="result-label">正确率</span>
+          <span class="result-value" id="final-acc">0%</span>
+        </div>
+        <div class="result-row">
+          <span class="result-label">答对</span>
+          <span class="result-value" id="final-right">0 题</span>
+        </div>
+      </div>
+
+      <p class="result-rank" id="final-rank"></p>
+
+      <button class="btn btn-main" id="btn-restart" type="button">再来一次</button>
+    </section>
+
+    <!-- 第四屏：记忆翻牌 -->
+    <section class="screen" id="screen-memory">
+      <div class="meta">
+        <span class="meta-progress" id="mem-time">用时 00:00</span>
+        <span class="meta-score" id="mem-moves">步数 0</span>
+      </div>
+
+      <div class="song-chip" id="mem-progress">已配对 0 / 8</div>
+
+      <div class="mem-board" id="mem-board"></div>
+
+      <p class="feedback" id="mem-feedback"></p>
+
+      <div class="mem-foot">
+        <button class="btn btn-ghost" id="btn-mem-back" type="button">返回首页</button>
+        <button class="btn btn-main" id="btn-mem-restart" type="button">重开一局</button>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- 通关庆祝 -->
+  <div class="celebrate" id="celebrate" hidden>
+    <div class="confetti" id="confetti"></div>
+
+    <div class="celebrate-panel">
+      <div class="celebrate-star">★</div>
+      <h2 class="celebrate-title">全部配对成功！</h2>
+      <p class="celebrate-stat" id="celebrate-stat">用时 00:00 · 0 步</p>
+      <p class="celebrate-rank" id="celebrate-rank"></p>
+
+      <div class="celebrate-btns">
+        <button class="btn btn-ghost" id="btn-mem-home" type="button">回到首页</button>
+        <button class="btn btn-main" id="btn-mem-again" type="button">再来一局</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 歌曲库弹窗 -->
+  <div class="modal" id="modal" hidden>
+    <div class="modal-mask" id="modal-mask"></div>
+
+    <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+
+      <header class="modal-head">
+        <h2 class="modal-title" id="modal-title">本网站已收录 0 首歌曲</h2>
+        <button class="modal-close" id="modal-close" type="button" aria-label="关闭">×</button>
+      </header>
+
+      <label class="check-all">
+        <input type="checkbox" id="check-all">
+        <span>全部选择 / 全部取消选择</span>
+      </label>
+
+      <div class="song-rows" id="song-rows"></div>
+
+      <footer class="modal-foot">
+        <button class="btn btn-ghost" id="btn-export" type="button">导出 PDF</button>
+        <button class="btn btn-main" id="btn-done" type="button">完成</button>
+      </footer>
+
+    </div>
+  </div>
+
+  <!-- 复习依下：看本局几首歌的完整歌词 -->
+  <div class="modal" id="review" hidden>
+    <div class="modal-mask" id="review-mask"></div>
+
+    <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="review-title">
+
+      <header class="modal-head">
+        <h2 class="modal-title" id="review-title">复习依下</h2>
+        <button class="modal-close" id="review-close" type="button" aria-label="关闭">×</button>
+      </header>
+
+      <p class="review-sub" id="review-sub"></p>
+
+      <!-- 选了很多歌时的快速跳转条 -->
+      <div class="review-jump" id="review-jump" hidden></div>
+
+      <div class="review-list" id="review-list"></div>
+
+      <footer class="modal-foot">
+        <button class="btn btn-main" id="review-done" type="button">记住啦</button>
+      </footer>
+
+    </div>
+  </div>
+
+  <!-- 打印用容器：只在打印／导出 PDF 时显示 -->
+  <div class="print-root" id="print-root"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
