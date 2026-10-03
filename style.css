@@ -1,0 +1,1243 @@
+/* ===== 洛天依接歌词 · 锦依卫特训 ===== */
+/* 天依蓝青风：以天依蓝 #66CCFF 为主色的清透渐变界面 */
+
+:root {
+  --ty-blue: #66ccff;          /* 天依蓝 */
+  --ty-blue-deep: #2fa3dd;     /* 深一号的蓝，用于按钮渐变 */
+  --ty-cyan: #a8ecff;          /* 青，用于描边与光晕 */
+  --ink: #17455c;              /* 正文深蓝灰 */
+  --ink-soft: #5d8ba4;         /* 次级文字 */
+  --ok: #12a06a;               /* 答对用绿 */
+  --err: #e0574a;              /* 答错用红 */
+  --card-bg: rgba(255, 255, 255, 0.88);
+  --radius: 26px;
+}
+
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html {
+  min-height: 100%;
+  margin: 0;
+}
+
+body {
+  min-height: 100%;
+  margin: 0;
+  display: flex;
+  justify-content: center;
+  /* 内容变高时从顶部开始排，配合卡片的 margin:auto 实现「够高就居中、超高可滚动」 */
+  align-items: flex-start;
+  padding: 22px 16px;
+  font-family: "PingFang SC", "Microsoft YaHei", "Hiragino Sans GB", "Noto Sans SC", system-ui, sans-serif;
+  color: var(--ink);
+  background:
+    radial-gradient(1000px 620px at 12% -8%, #ffffff 0%, rgba(255, 255, 255, 0) 62%),
+    linear-gradient(165deg, #eaf9ff 0%, #d9f2ff 46%, #c9ebff 100%);
+  background-attachment: fixed;
+  overflow-x: hidden;
+}
+
+/* 带 hidden 的元素一律真正藏起来：
+   组件里的 display 会盖掉浏览器默认的 [hidden]{display:none}，不加这条很容易踩坑 */
+[hidden] {
+  display: none !important;
+}
+
+/* 背景里的柔光圆斑，纯装饰 */
+.deco {
+  position: fixed;
+  border-radius: 50%;
+  filter: blur(46px);
+  opacity: 0.55;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.deco-1 {
+  width: 260px;
+  height: 260px;
+  top: -70px;
+  left: -60px;
+  background: #8fe3ff;
+}
+
+.deco-2 {
+  width: 220px;
+  height: 220px;
+  right: -70px;
+  bottom: 6%;
+  background: #bdf0ff;
+}
+
+.deco-3 {
+  width: 180px;
+  height: 180px;
+  left: 8%;
+  bottom: -60px;
+  background: #d8f4ff;
+}
+
+/* ===== 卡片 ===== */
+.card {
+  position: relative;
+  z-index: 1;
+  width: min(100%, 560px);
+  /* 上下都写 auto：空间充足时垂直居中，内容过高时自动贴顶且能正常滚动 */
+  margin: auto;
+  padding: 30px 26px 28px;
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  border-radius: var(--radius);
+  background: var(--card-bg);
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+  box-shadow:
+    0 22px 55px rgba(66, 153, 204, 0.26),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+
+/* ===== 标题区 ===== */
+.head {
+  text-align: center;
+  margin-bottom: 22px;
+}
+
+.title {
+  margin: 0;
+  font-size: clamp(23px, 6.4vw, 31px);
+  letter-spacing: 3px;
+  background: linear-gradient(120deg, #37a8e0 0%, #66ccff 52%, #48bff0 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.subtitle {
+  margin: 7px 0 0;
+  font-size: 13px;
+  letter-spacing: 6px;
+  color: var(--ink-soft);
+}
+
+/* 标题下方的小装饰线 */
+.subtitle::after {
+  content: "";
+  display: block;
+  width: 54px;
+  height: 3px;
+  margin: 12px auto 0;
+  border-radius: 3px;
+  background: linear-gradient(90deg, var(--ty-blue), var(--ty-cyan));
+}
+
+/* ===== 分屏切换 ===== */
+.screen {
+  display: none;
+}
+
+.screen.is-active {
+  display: block;
+  animation: fade-up 0.28s ease both;
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* ===== 开始页 ===== */
+.intro-line {
+  margin: 0 0 10px;
+  text-align: center;
+  font-size: 15px;
+  line-height: 1.9;
+}
+
+.intro-dim {
+  color: var(--ink-soft);
+  font-size: 14px;
+}
+
+.intro-dim b {
+  color: var(--ty-blue-deep);
+}
+
+/* ===== 分段选择器（玩法 / 每轮题数） ===== */
+.seg-block {
+  margin-top: 18px;
+  text-align: left;
+}
+
+.seg-label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 12px;
+  letter-spacing: 2px;
+  color: var(--ink-soft);
+}
+
+.segmented {
+  display: flex;
+  gap: 5px;
+  padding: 4px;
+  border: 1px solid #dceffa;
+  border-radius: 15px;
+  background: #eef8ff;
+}
+
+.seg-btn {
+  flex: 1;
+  padding: 9px 4px;
+  font-family: inherit;
+  font-size: 14px;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+  color: var(--ink-soft);
+  border: 0;
+  border-radius: 11px;
+  background: none;
+  cursor: pointer;
+  transition: color 0.16s ease, background 0.16s ease, box-shadow 0.16s ease;
+}
+
+.seg-btn.is-on {
+  font-weight: 600;
+  color: #ffffff;
+  background: linear-gradient(120deg, #6ed2ff, #3fb0e8);
+  box-shadow: 0 6px 14px rgba(74, 185, 238, 0.28);
+}
+
+@media (hover: hover) {
+  .seg-btn:not(.is-on):hover {
+    color: var(--ty-blue-deep);
+    background: rgba(102, 204, 255, 0.16);
+  }
+}
+
+/* ===== 歌曲库入口按钮 ===== */
+.filter-entry {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  margin: 24px 0 18px;
+  padding: 14px 16px;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+  border: 1px solid #cfeaff;
+  border-radius: 16px;
+  background: #f5fcff;
+  transition: border-color 0.18s ease, background 0.18s ease, transform 0.12s ease;
+}
+
+@media (hover: hover) {
+  .filter-entry:hover {
+    border-color: var(--ty-blue);
+    background: #eefaff;
+  }
+}
+
+.filter-entry:active {
+  transform: scale(0.985);
+}
+
+.filter-entry-box {
+  /* 让文字在窄屏下能正常收缩换行 */
+  min-width: 0;
+}
+
+.filter-entry-title {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  color: var(--ty-blue-deep);
+}
+
+.filter-entry-sub {
+  display: block;
+  margin-top: 4px;
+  font-size: 12px;
+  letter-spacing: 0.5px;
+  color: var(--ink-soft);
+}
+
+.filter-entry-sub.is-warn {
+  color: var(--err);
+}
+
+.filter-entry-arrow {
+  font-size: 20px;
+  line-height: 1;
+  color: var(--ty-blue);
+}
+
+/* ===== 按钮 ===== */
+.btn {
+  display: block;
+  width: 100%;
+  padding: 15px 18px;
+  font-family: inherit;
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  border: 0;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: transform 0.12s ease, box-shadow 0.2s ease, filter 0.2s ease;
+}
+
+.btn-main {
+  color: #ffffff;
+  background: linear-gradient(120deg, #6ed2ff 0%, #4ab9ee 55%, #2fa3dd 100%);
+  box-shadow: 0 12px 24px rgba(74, 185, 238, 0.38);
+}
+
+@media (hover: hover) {
+  .btn-main:hover {
+    filter: brightness(1.05);
+    box-shadow: 0 14px 28px rgba(74, 185, 238, 0.46);
+  }
+}
+
+.btn:active {
+  transform: scale(0.97);
+}
+
+.btn[disabled] {
+  opacity: 0.6;
+  cursor: default;
+  box-shadow: none;
+}
+
+/* 次要按钮：浅底描边 */
+.btn-ghost {
+  color: var(--ty-blue-deep);
+  background: #eef8ff;
+  border: 1px solid #cfeaff;
+  box-shadow: none;
+}
+
+@media (hover: hover) {
+  .btn-ghost:hover {
+    background: #e4f5ff;
+    filter: none;
+    box-shadow: none;
+  }
+}
+
+/* ===== 答题页 ===== */
+.meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--ink-soft);
+}
+
+.meta-progress {
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: rgba(102, 204, 255, 0.16);
+  color: var(--ty-blue-deep);
+  font-weight: 600;
+  letter-spacing: 1px;
+}
+
+.meta-score {
+  font-weight: 600;
+  letter-spacing: 1px;
+}
+
+.song-chip {
+  display: inline-block;
+  margin: 20px 0 0;
+  padding: 5px 14px;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  color: #ffffff;
+  border-radius: 999px;
+  background: linear-gradient(120deg, #6ed2ff, #38aee6);
+  box-shadow: 0 6px 14px rgba(74, 185, 238, 0.32);
+}
+
+.question {
+  margin: 18px 0 22px;
+  padding: 18px 16px;
+  font-size: clamp(16px, 4.7vw, 19px);
+  line-height: 1.85;
+  letter-spacing: 1px;
+  border-left: 4px solid var(--ty-blue);
+  border-radius: 0 14px 14px 0;
+  background: rgba(102, 204, 255, 0.1);
+  word-break: break-word;
+}
+
+/* ===== 选项按钮 ===== */
+.options {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.option {
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+  width: 100%;
+  padding: 13px 15px;
+  font-family: inherit;
+  font-size: 15px;
+  line-height: 1.7;
+  letter-spacing: 0.5px;
+  text-align: left;
+  color: var(--ink);
+  border: 2px solid #d8ecf8;
+  border-radius: 15px;
+  background: #ffffff;
+  cursor: pointer;
+  transition: transform 0.12s ease, border-color 0.18s ease, background 0.18s ease, color 0.18s ease;
+}
+
+@media (hover: hover) {
+  .option:not([disabled]):hover {
+    border-color: var(--ty-blue);
+    background: #f6fcff;
+  }
+}
+
+.option:active:not([disabled]) {
+  transform: scale(0.985);
+}
+
+/* 左侧的 A / B / C / D 圆标 */
+.option-key {
+  flex: 0 0 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  margin-top: 2px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #ffffff;
+  border-radius: 50%;
+  background: linear-gradient(120deg, #6ed2ff, #3fb0e8);
+}
+
+.option-text {
+  flex: 1;
+  word-break: break-word;
+}
+
+/* 选对：整条变绿 */
+.option.is-right {
+  border-color: #5fd0a2;
+  background: #effaf5;
+  color: #0d7d52;
+}
+
+.option.is-right .option-key {
+  background: linear-gradient(120deg, #5fd4a4, #12a06a);
+}
+
+/* 选错：整条变红 */
+.option.is-wrong {
+  border-color: #efa79c;
+  background: #fdf1ee;
+  color: #b8402f;
+}
+
+.option.is-wrong .option-key {
+  background: linear-gradient(120deg, #f08a76, #d94b38);
+}
+
+/* 揭晓答案后，没被选中的那几条淡下去 */
+.option.is-dim {
+  opacity: 0.45;
+}
+
+/* 反馈文字 */
+.feedback {
+  min-height: 26px;
+  margin: 16px 0 0;
+  font-size: 15px;
+  line-height: 1.8;
+  text-align: center;
+  word-break: break-word;
+}
+
+.feedback.is-ok {
+  color: var(--ok);
+  font-weight: 700;
+}
+
+.feedback.is-err {
+  color: var(--err);
+  font-weight: 600;
+}
+
+.feedback.is-ok {
+  animation: pop 0.32s ease both;
+}
+
+.feedback.is-err {
+  animation: shake 0.34s ease both;
+}
+
+@keyframes pop {
+  0% {
+    transform: scale(0.86);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.06);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes shake {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-5px);
+  }
+  50% {
+    transform: translateX(5px);
+  }
+  75% {
+    transform: translateX(-3px);
+  }
+}
+
+/* ===== 结果页 ===== */
+.result-title {
+  margin: 6px 0 22px;
+  text-align: center;
+  font-size: 22px;
+  letter-spacing: 4px;
+  color: var(--ty-blue-deep);
+}
+
+.result-box {
+  padding: 8px 4px;
+  border-radius: 18px;
+  background: rgba(102, 204, 255, 0.1);
+}
+
+.result-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding: 13px 18px;
+  border-bottom: 1px dashed rgba(102, 204, 255, 0.44);
+}
+
+.result-row:last-child {
+  border-bottom: 0;
+}
+
+.result-label {
+  font-size: 15px;
+  color: var(--ink-soft);
+}
+
+.result-value {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: var(--ty-blue-deep);
+}
+
+.result-rank {
+  margin: 20px 0 22px;
+  text-align: center;
+  font-size: 15px;
+  line-height: 1.8;
+  color: var(--ink);
+}
+
+/* ===== 歌曲库弹窗 ===== */
+.modal {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 18px 14px;
+}
+
+.modal-mask {
+  position: absolute;
+  inset: 0;
+  background: rgba(21, 70, 96, 0.42);
+  -webkit-backdrop-filter: blur(3px);
+  backdrop-filter: blur(3px);
+}
+
+.modal-panel {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: min(100%, 470px);
+  max-height: min(86vh, 700px);
+  padding: 20px 20px 18px;
+  border-radius: 22px;
+  background: #ffffff;
+  box-shadow: 0 26px 60px rgba(18, 76, 106, 0.34);
+  animation: panel-in 0.22s ease both;
+}
+
+@keyframes panel-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.modal-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 14px;
+  /* 弹窗是纵向 flex，这些不滚动的块必须禁止收缩：
+     默认 flex-shrink:1 会把标题、跳转条一起压扁 */
+  flex: 0 0 auto;
+}
+
+.modal-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: var(--ty-blue-deep);
+}
+
+.modal-close {
+  flex: 0 0 30px;
+  width: 30px;
+  height: 30px;
+  font-family: inherit;
+  font-size: 20px;
+  line-height: 1;
+  color: #93b8cb;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  cursor: pointer;
+  transition: color 0.15s ease, background 0.15s ease;
+}
+
+@media (hover: hover) {
+  .modal-close:hover {
+    color: var(--err);
+    background: #fdf1ee;
+  }
+}
+
+/* 全选行 */
+.check-all {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 2px 12px;
+  padding-bottom: 12px;
+  font-size: 13px;
+  letter-spacing: 0.5px;
+  color: var(--ink-soft);
+  border-bottom: 1px dashed #dceffa;
+  cursor: pointer;
+}
+
+/* 歌曲行 */
+.song-rows {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.song-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+  padding: 10px 12px;
+  border: 1px solid #e4f2fa;
+  border-radius: 13px;
+  transition: border-color 0.16s ease, background 0.16s ease;
+}
+
+.song-row.is-on {
+  border-color: #a9e2ff;
+  background: #f4fcff;
+}
+
+.song-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  cursor: pointer;
+}
+
+.song-name {
+  font-size: 14px;
+  letter-spacing: 0.5px;
+  word-break: break-word;
+}
+
+.song-count {
+  flex: 0 0 auto;
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+
+/* 复选框统一用天依蓝 */
+input[type="checkbox"] {
+  width: 17px;
+  height: 17px;
+  margin: 0;
+  accent-color: var(--ty-blue-deep);
+  cursor: pointer;
+}
+
+.modal-foot {
+  display: flex;
+  gap: 10px;
+  flex: 0 0 auto;
+}
+
+.modal-foot .btn {
+  flex: 1;
+}
+
+/* ===== 复习依下：歌词单 ===== */
+.review-sub {
+  flex: 0 0 auto;
+  margin: 0 2px 12px;
+  padding-bottom: 12px;
+  font-size: 12px;
+  line-height: 1.6;
+  letter-spacing: 0.5px;
+  color: var(--ink-soft);
+  border-bottom: 1px dashed #dceffa;
+}
+
+/* 歌多时的跳转条：横向滚动的歌名胶囊 */
+.review-jump {
+  display: flex;
+  gap: 7px;
+  margin: 0 0 12px;
+  padding-bottom: 10px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border-bottom: 1px dashed #dceffa;
+  /* 滚动容器的自动最小高度是 0，不加这句会被纵向 flex 压成一条线 */
+  flex: 0 0 auto;
+}
+
+.review-jump-chip {
+  flex: 0 0 auto;
+  padding: 5px 12px;
+  font-family: inherit;
+  font-size: 12px;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+  color: var(--ty-blue-deep);
+  border: 1px solid #cfeeff;
+  border-radius: 999px;
+  background: #f2fbff;
+  cursor: pointer;
+  transition: background 0.16s ease, color 0.16s ease;
+}
+
+.review-jump-chip.is-on {
+  color: #ffffff;
+  border-color: transparent;
+  background: linear-gradient(120deg, #6ed2ff, #3fb0e8);
+}
+
+.review-list {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  margin-bottom: 14px;
+}
+
+.review-song {
+  margin-bottom: 12px;
+  padding: 12px 13px;
+  border: 1px solid #e4f2fa;
+  border-radius: 14px;
+  background: #fbfeff;
+}
+
+.review-head {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-bottom: 8px;
+}
+
+.review-art {
+  flex: 0 0 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  color: #ffffff;
+  border-radius: 9px;
+  box-shadow: 0 4px 10px rgba(74, 185, 238, 0.26);
+}
+
+.review-art svg {
+  width: 72%;
+  height: 72%;
+}
+
+.review-name {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  color: var(--ty-blue-deep);
+}
+
+.review-lines {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.review-line {
+  font-size: 13px;
+  line-height: 1.75;
+  color: var(--ink);
+}
+
+/* ===== 小屏适配 ===== */
+@media (max-width: 400px) {
+  body {
+    padding: 14px 10px;
+  }
+
+  .card {
+    padding: 24px 18px 22px;
+    border-radius: 20px;
+  }
+
+  .question {
+    padding: 15px 13px;
+  }
+
+  .btn {
+    padding: 14px 16px;
+    font-size: 16px;
+  }
+
+  .modal {
+    padding: 12px 10px;
+  }
+
+  .modal-panel {
+    max-height: 90vh;
+    padding: 16px 15px 14px;
+    border-radius: 18px;
+  }
+
+  .modal-title {
+    font-size: 14px;
+  }
+
+  .mem-board {
+    gap: 6px;
+  }
+
+  .mem-lyric {
+    padding: 0 3px;
+    font-size: 11px;
+  }
+
+  .celebrate-panel {
+    padding: 22px 18px 18px;
+  }
+}
+
+/* 尊重系统的减弱动效设置 */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+/* ===== 记忆翻牌 ===== */
+.mem-board {
+  display: grid;
+  /* 必须写 minmax(0, 1fr)：默认的 1fr 最小值是 min-content，
+     歌词会被当成不可折行的一整句，把四列一起顶出卡片右边 */
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  margin: 18px 0 14px;
+}
+
+.mem-card {
+  position: relative;
+  min-width: 0;
+  aspect-ratio: 1 / 1;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  perspective: 720px;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.mem-inner {
+  position: absolute;
+  inset: 0;
+  transform-style: preserve-3d;
+  transition: transform 0.42s cubic-bezier(0.4, 0.1, 0.2, 1);
+}
+
+/* 翻开 */
+.mem-card.is-open .mem-inner {
+  transform: rotateY(180deg);
+}
+
+.mem-face {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  overflow: hidden;
+  border-radius: 13px;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+}
+
+/* 牌背：统一的天依蓝，带一个音符 */
+.mem-cover {
+  color: #ffffff;
+  background: linear-gradient(140deg, #7fd9ff 0%, #45b4e8 55%, #2f9dd6 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+
+.mem-cover svg {
+  width: 44%;
+  height: 44%;
+}
+
+/* 牌面：一句歌词 + 淡淡的装饰图 */
+/* 注意：牌面必须自己先转 180°，否则两张面都朝前、歌词一开始就露出来了 */
+.mem-front {
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  transform: rotateY(180deg);
+  /* 比牌背深一档：白字压在牌面上才读得清 */
+  background: linear-gradient(140deg, #74cdff 0%, #3fa9de 52%, #2b91c9 100%);
+}
+
+/* 装饰图压在歌词底下，每张牌都是同一个图案，不能用来认歌 */
+.mem-art {
+  position: absolute;
+  top: 8%;
+  left: 8%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30%;
+  height: 30%;
+  opacity: 0.24;
+  pointer-events: none;
+}
+
+.mem-art svg {
+  width: 100%;
+  height: 100%;
+}
+
+/* 歌词：牌面主角，窄屏下会自动折行，最多四行 */
+.mem-lyric {
+  position: relative;
+  z-index: 1;
+  max-width: 100%;
+  padding: 0 5px;
+  font-size: 12px;
+  line-height: 1.32;
+  letter-spacing: 0.2px;
+  text-align: center;
+  word-break: break-word;
+  text-shadow: 0 1px 2px rgba(20, 70, 100, 0.4);
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* 配对成功：弹一下再消失 */
+.mem-card.is-matched {
+  pointer-events: none;
+}
+
+.mem-card.is-matched .mem-inner {
+  animation: mem-vanish 0.52s ease forwards;
+}
+
+@keyframes mem-vanish {
+  0% {
+    transform: rotateY(180deg) scale(1);
+    opacity: 1;
+  }
+  45% {
+    transform: rotateY(180deg) scale(1.14);
+    opacity: 1;
+  }
+  100% {
+    transform: rotateY(180deg) scale(0.55);
+    opacity: 0;
+  }
+}
+
+.mem-foot {
+  display: flex;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+/* 用 flex:1 而不是 flex:1 1 auto——.btn 自带 width:100%，
+   以宽度做基准的话每个按钮都会独占一整行 */
+.mem-foot .btn {
+  flex: 1;
+}
+
+/* ===== 通关庆祝 ===== */
+.celebrate {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px 16px;
+  background: rgba(21, 70, 96, 0.34);
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
+}
+
+.celebrate-panel {
+  position: relative;
+  z-index: 2;
+  width: min(100%, 360px);
+  padding: 26px 22px 22px;
+  text-align: center;
+  border-radius: 24px;
+  background: #ffffff;
+  box-shadow: 0 26px 60px rgba(18, 76, 106, 0.36);
+  animation: celebrate-in 0.42s cubic-bezier(0.2, 1.3, 0.4, 1) both;
+}
+
+@keyframes celebrate-in {
+  0% {
+    transform: scale(0.7) translateY(20px);
+    opacity: 0;
+  }
+  100% {
+    transform: none;
+    opacity: 1;
+  }
+}
+
+/* 头顶那颗转圈的星星 */
+.celebrate-star {
+  width: 52px;
+  height: 52px;
+  margin: 0 auto 12px;
+  font-size: 26px;
+  line-height: 52px;
+  color: #ffffff;
+  border-radius: 50%;
+  background: linear-gradient(140deg, #7fd9ff, #3aa9e0);
+  box-shadow: 0 8px 20px rgba(74, 185, 238, 0.4);
+  animation: star-spin 2.4s ease-in-out infinite;
+}
+
+@keyframes star-spin {
+  0%, 100% {
+    transform: rotate(0deg) scale(1);
+  }
+  50% {
+    transform: rotate(180deg) scale(1.12);
+  }
+}
+
+.celebrate-title {
+  margin: 0 0 10px;
+  font-size: 20px;
+  letter-spacing: 3px;
+  color: var(--ty-blue-deep);
+}
+
+.celebrate-stat {
+  margin: 0 0 6px;
+  font-size: 15px;
+  letter-spacing: 1px;
+}
+
+.celebrate-rank {
+  margin: 0 0 20px;
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--ink-soft);
+}
+
+.celebrate-btns {
+  display: flex;
+  gap: 10px;
+}
+
+.celebrate-btns .btn {
+  flex: 1;
+}
+
+/* 撒花 */
+.confetti {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.confetti-bit {
+  position: absolute;
+  top: -14%;
+  border-radius: 2px;
+  animation-name: confetti-fall;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+
+@keyframes confetti-fall {
+  0% {
+    transform: translateY(0) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(118vh) rotate(560deg);
+    opacity: 0.85;
+  }
+}
+
+/* ===== 题目导出（打印 / 另存为 PDF） ===== */
+/* 平时藏起来，只在打印时显示 */
+.print-root {
+  display: none;
+}
+
+.print-title {
+  margin: 0 0 6px;
+  font-size: 20px;
+  letter-spacing: 2px;
+}
+
+.print-sub {
+  margin: 0 0 16px;
+  padding-bottom: 10px;
+  font-size: 12px;
+  color: #555555;
+  border-bottom: 1px solid #cccccc;
+}
+
+.print-item {
+  margin-bottom: 13px;
+  page-break-inside: avoid;
+  break-inside: avoid;
+}
+
+.print-q {
+  font-size: 13.5px;
+  line-height: 1.7;
+}
+
+.print-opts {
+  margin-top: 3px;
+  padding-left: 14px;
+  font-size: 12.5px;
+  line-height: 1.75;
+  color: #333333;
+}
+
+.print-answer-title {
+  margin: 0 0 8px;
+  padding-top: 12px;
+  font-size: 15px;
+  letter-spacing: 2px;
+  border-top: 1px solid #cccccc;
+  page-break-before: always;
+  break-before: page;
+}
+
+.print-answers {
+  font-size: 12.5px;
+  line-height: 2;
+  color: #222222;
+}
+
+@media print {
+  @page {
+    margin: 14mm;
+  }
+
+  body {
+    display: block;
+    min-height: 0;
+    padding: 0;
+    color: #000000;
+    background: #ffffff;
+    background-image: none;
+    overflow: visible;
+  }
+
+  /* 打印时页面上其他东西全部隐藏，只留题目 */
+  .deco,
+  .card,
+  .modal,
+  .celebrate {
+    display: none !important;
+  }
+
+  .print-root {
+    display: block !important;
+  }
+}
