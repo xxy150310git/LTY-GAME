@@ -22,7 +22,22 @@
     <!-- 第一屏：开始 -->
     <section class="screen is-active" id="screen-start">
       <p class="intro-line" id="mode-intro">我说上半句，你选出下半句。</p>
-      <p class="intro-line intro-dim">四选一，答对一题加 <b>10</b> 分。</p>
+      <p class="intro-line intro-dim" id="mode-hint">四选一，答对一题加 10 分。</p>
+
+      <!-- 账号与积分：两个互不相干的入口，各自点进各自的页面 -->
+      <div class="entry-row">
+        <button class="entry-btn" id="btn-account" type="button">
+          <span class="entry-btn-label">账号</span>
+          <b class="entry-btn-value" id="account-name">登录</b>
+          <span class="entry-btn-arrow">›</span>
+        </button>
+
+        <button class="entry-btn" id="btn-shop" type="button">
+          <span class="entry-btn-label">积分</span>
+          <b class="entry-btn-value" id="points-value">0</b>
+          <span class="entry-btn-arrow">›</span>
+        </button>
+      </div>
 
       <div class="seg-block">
         <span class="seg-label">玩法</span>
@@ -30,7 +45,7 @@
       </div>
 
       <div class="seg-block" id="size-block">
-        <span class="seg-label">每轮题数</span>
+        <span class="seg-label" id="size-label">每轮题数</span>
         <div class="segmented" id="size-group"></div>
       </div>
 
@@ -85,6 +100,8 @@
       </div>
 
       <p class="result-rank" id="final-rank"></p>
+
+      <p class="result-sync" id="result-sync"></p>
 
       <button class="btn btn-main" id="btn-restart" type="button">再来一次</button>
     </section>
@@ -153,7 +170,7 @@
     </div>
   </div>
 
-  <!-- 复习依下：看本局几首歌的完整歌词 -->
+  <!-- 复习依下：看已勾选那几首歌的完整歌词 -->
   <div class="modal" id="review" hidden>
     <div class="modal-mask" id="review-mask"></div>
 
@@ -178,9 +195,79 @@
     </div>
   </div>
 
+  <!-- 账号与积分商店 -->
+  <div class="modal" id="user" hidden>
+    <div class="modal-mask" id="user-mask"></div>
+
+    <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="user-title">
+
+      <header class="modal-head">
+        <h2 class="modal-title" id="user-title">我的账号</h2>
+        <button class="modal-close" id="user-close" type="button" aria-label="关闭">×</button>
+      </header>
+
+      <div class="segmented user-tabs">
+        <button class="seg-btn" id="tab-account" type="button">账号</button>
+        <button class="seg-btn" id="tab-shop" type="button">积分商店</button>
+      </div>
+
+      <!-- 视图一：账号 -->
+      <div class="user-view" id="view-account">
+        <p class="review-sub" id="account-sub"></p>
+
+        <!-- 未登录 -->
+        <div id="auth-box">
+          <label class="field">
+            <span class="field-label">邮箱</span>
+            <input class="field-input" id="auth-email" type="email" autocomplete="email"
+                   placeholder="you@example.com">
+          </label>
+          <label class="field">
+            <span class="field-label">密码（至少 6 位）</span>
+            <input class="field-input" id="auth-pass" type="password" autocomplete="current-password"
+                   placeholder="••••••">
+          </label>
+          <p class="form-tip" id="auth-tip"></p>
+          <div class="modal-foot">
+            <button class="btn btn-ghost" id="btn-login" type="button">登录</button>
+            <button class="btn btn-main" id="btn-register" type="button">注册</button>
+          </div>
+        </div>
+
+        <!-- 已登录 -->
+        <div id="me-box" hidden>
+          <div class="me-row"><span>昵称</span><b id="me-name">—</b></div>
+          <div class="me-row"><span>积分余额</span><b id="me-points">0</b></div>
+          <div class="me-row"><span>待同步答题</span><b id="me-pending">0 条</b></div>
+          <p class="review-sub me-items-title">已拥有的物品</p>
+          <div class="shop-list" id="me-items"></div>
+          <div class="modal-foot">
+            <button class="btn btn-ghost" id="btn-sync" type="button">立即同步</button>
+            <button class="btn btn-main" id="btn-logout" type="button">退出登录</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 视图二：积分商店 -->
+      <div class="user-view" id="view-shop" hidden>
+        <p class="review-sub" id="shop-sub"></p>
+        <div class="shop-list" id="shop-list"></div>
+      </div>
+
+      <footer class="modal-foot">
+        <button class="btn btn-main" id="user-done" type="button">关闭</button>
+      </footer>
+
+    </div>
+  </div>
+
   <!-- 打印用容器：只在打印／导出 PDF 时显示 -->
   <div class="print-root" id="print-root"></div>
 
+  <!-- config.js 由 tools/build-config.js 生成；store/api 是本地存储与后端客户端 -->
+  <script src="config.js"></script>
+  <script src="store.js"></script>
+  <script src="api.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
