@@ -186,6 +186,8 @@ body {
 
 .segmented {
   display: flex;
+  /* 玩法有六项，窄屏一行放不下就让它换行 */
+  flex-wrap: wrap;
   gap: 5px;
   padding: 4px;
   border: 1px solid #dceffa;
@@ -353,6 +355,12 @@ body {
   color: var(--ty-blue-deep);
   font-weight: 600;
   letter-spacing: 1px;
+}
+
+/* 限时狂飙快没时间了 */
+.meta-progress.is-urgent {
+  color: #ffffff;
+  background: var(--err);
 }
 
 .meta-score {
@@ -839,6 +847,238 @@ input[type="checkbox"] {
   font-size: 13px;
   line-height: 1.75;
   color: var(--ink);
+}
+
+/* ===== 账号与积分：两个并排的独立入口 ===== */
+.entry-row {
+  display: grid;
+  /* 用 minmax(0,1fr)：默认 1fr 的最小值是 min-content，
+     昵称一长就会把整行顶宽，撑出卡片 */
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin: 16px 0 0;
+}
+
+.entry-btn {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  padding: 12px 13px;
+  font-family: inherit;
+  text-align: left;
+  border: 1px solid #dceffa;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.72);
+  cursor: pointer;
+  transition: border-color 0.16s ease, background 0.16s ease;
+}
+
+@media (hover: hover) {
+  .entry-btn:hover {
+    border-color: #a9e2ff;
+    background: #f4fcff;
+  }
+}
+
+.entry-btn-label {
+  flex: 0 0 auto;
+  font-size: 12px;
+  letter-spacing: 1.5px;
+  color: var(--ink-soft);
+}
+
+.entry-btn-value {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: var(--ty-blue-deep);
+}
+
+/* 已登录：昵称显示成绿色，跟"未登录"一眼区分开 */
+.entry-btn-value.is-on {
+  color: var(--ok);
+}
+
+.entry-btn-arrow {
+  flex: 0 0 auto;
+  font-size: 15px;
+  line-height: 1;
+  color: #b9d8e8;
+}
+
+.user-tabs {
+  margin-bottom: 14px;
+}
+
+.user-view {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.field {
+  display: block;
+  margin-bottom: 14px;
+}
+
+.field-label {
+  display: block;
+  margin-bottom: 7px;
+  font-size: 12px;
+  letter-spacing: 1px;
+  color: var(--ink-soft);
+}
+
+.field-input {
+  width: 100%;
+  padding: 12px 13px;
+  font-family: inherit;
+  font-size: 15px;
+  color: var(--ink);
+  border: 2px solid #dceffa;
+  border-radius: 12px;
+  background: #ffffff;
+  outline: none;
+  transition: border-color 0.16s ease, box-shadow 0.16s ease;
+}
+
+.field-input::placeholder {
+  color: #a8c6d6;
+}
+
+.field-input:focus {
+  border-color: var(--ty-blue);
+  box-shadow: 0 0 0 3px rgba(102, 204, 255, 0.2);
+}
+
+.form-tip {
+  min-height: 20px;
+  margin: 4px 0 12px;
+  font-size: 13px;
+  line-height: 1.6;
+  text-align: center;
+  color: var(--err);
+}
+
+.form-tip.is-ok {
+  color: var(--ok);
+}
+
+.me-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 2px;
+  font-size: 14px;
+  color: var(--ink-soft);
+  border-bottom: 1px dashed #e4f2fa;
+}
+
+.me-row b {
+  font-size: 15px;
+  color: var(--ty-blue-deep);
+}
+
+.me-items-title {
+  margin-top: 16px;
+}
+
+#me-items {
+  max-height: 30vh;
+}
+
+.shop-list {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.shop-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+  padding: 12px 13px;
+  border: 1px solid #e4f2fa;
+  border-radius: 14px;
+  background: #fbfeff;
+}
+
+.shop-item.is-owned {
+  border-color: #b7e6cd;
+  background: #f4fdf8;
+}
+
+.shop-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.shop-name {
+  margin: 0 0 3px;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  color: var(--ink);
+}
+
+.shop-desc {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--ink-soft);
+}
+
+.shop-tag {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 7px;
+  font-size: 11px;
+  border-radius: 999px;
+  color: var(--ty-blue-deep);
+  background: rgba(102, 204, 255, 0.18);
+}
+
+.shop-buy {
+  flex: 0 0 auto;
+  padding: 9px 14px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+  color: #ffffff;
+  border: 0;
+  border-radius: 999px;
+  background: linear-gradient(120deg, #6ed2ff, #3fb0e8);
+  cursor: pointer;
+}
+
+.shop-buy[disabled] {
+  color: #8fb4c7;
+  background: #e8f4fa;
+  cursor: default;
+}
+
+.result-sync {
+  margin: 14px 0 18px;
+  font-size: 13px;
+  line-height: 1.7;
+  text-align: center;
+  color: var(--ink-soft);
+}
+
+.result-sync b {
+  color: var(--ty-blue-deep);
 }
 
 /* ===== 小屏适配 ===== */
