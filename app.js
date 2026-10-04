@@ -568,11 +568,39 @@ const DELAY_CORRECT = 1200;
 /* 答错后停留的毫秒数，比答对长一些，方便看清原句 */
 const DELAY_WRONG = 2200;
 
-/* 三种玩法：line 接歌词、song 猜歌名、memory 记忆翻牌 */
+/* 六种玩法。sizes 是这一档可选的数值，sizeUnit 决定单位（题 / 秒），
+   defaultSize 是切到这个玩法时的默认档位 */
 const MODES = [
-  { id: "line", name: "接歌词", intro: "我说上半句，你选出下半句。", sizes: [5, 10, 20, 50] },
-  { id: "song", name: "猜歌名", intro: "给你一句歌词，猜猜是哪首歌。", sizes: [5, 10, 20] },
-  { id: "memory", name: "记忆翻牌", intro: "翻开卡片，把同一首歌的两句歌词配成一对。", sizes: [] }
+  {
+    id: "line", name: "接歌词", intro: "我说上半句，你选出下半句。",
+    hint: "四选一，答对一题加 10 分。",
+    sizes: [5, 10, 20, 50], sizeLabel: "每轮题数", sizeUnit: " 题", defaultSize: 10
+  },
+  {
+    id: "song", name: "猜歌名", intro: "给你一句歌词，猜猜是哪首歌。",
+    hint: "四选一，答对一题加 10 分。",
+    sizes: [5, 10, 20], sizeLabel: "每轮题数", sizeUnit: " 题", defaultSize: 10
+  },
+  {
+    id: "blank", name: "填空补词", intro: "歌词里挖掉一个词，把它补回来。",
+    hint: "四选一，答对一题加 10 分。",
+    sizes: [5, 10, 20, 50], sizeLabel: "每轮题数", sizeUnit: " 题", defaultSize: 10
+  },
+  {
+    id: "odd", name: "找异句", intro: "四句里挑出不属于这首歌的那一句。",
+    hint: "四选一，答对一题加 10 分。",
+    sizes: [5, 10, 20], sizeLabel: "每轮题数", sizeUnit: " 题", defaultSize: 10
+  },
+  {
+    id: "rush", name: "限时狂飙", intro: "倒计时里尽量多接，手越快分越高。",
+    hint: "倒计时不等人，答对一题加 10 分，答错不扣分。",
+    sizes: [30, 60, 90], sizeLabel: "时长", sizeUnit: " 秒", defaultSize: 60
+  },
+  {
+    id: "memory", name: "记忆翻牌", intro: "翻开卡片，把同一首歌的两句歌词配成一对。",
+    hint: "不比分数，比谁用的步数少。",
+    sizes: [], sizeLabel: "", sizeUnit: "", defaultSize: 0
+  }
 ];
 
 /* 记忆翻牌是 4 × 4，也就是 8 对；至少要选够 8 首歌才凑得齐 */
@@ -582,6 +610,16 @@ const MEMORY_FLIP_BACK = 1300;
 
 /* 「复习依下」里歌超过这么多首时，顶部出现跳转条 */
 const REVIEW_JUMP_MIN = 6;
+
+/* 填空补词里用来占位的符号。用半角下划线而不是全角「＿」：
+   全角下划线在每个字框里居中，连排会显示成「＿ ＿」一堆断横，半角才会连成一条线 */
+const BLANK_MARK = "____";
+
+/* 限时狂飙的反馈停留时间要短，不然时间都耗在等动画上 */
+const RUSH_DELAY_CORRECT = 420;
+const RUSH_DELAY_WRONG = 780;
+/* 倒计时剩这么多秒时把数字标红 */
+const RUSH_URGENT = 10;
 
 /* 每首歌对应的小插画：一段 SVG 路径 + 配色。用在「复习依下」的歌词单上
    （牌面不放它，免得同歌的两张牌被插图认出来） */
@@ -630,8 +668,10 @@ const el = {
     memory: document.getElementById("screen-memory")
   },
   modeIntro: document.getElementById("mode-intro"),
+  modeHint: document.getElementById("mode-hint"),
   modeGroup: document.getElementById("mode-group"),
   sizeBlock: document.getElementById("size-block"),
+  sizeLabel: document.getElementById("size-label"),
   sizeGroup: document.getElementById("size-group"),
   printRoot: document.getElementById("print-root"),
   poolInfo: document.getElementById("pool-info"),
@@ -677,18 +717,55 @@ const el = {
   celebrateStat: document.getElementById("celebrate-stat"),
   celebrateRank: document.getElementById("celebrate-rank"),
   btnMemHome: document.getElementById("btn-mem-home"),
-  btnMemAgain: document.getElementById("btn-mem-again")
+  btnMemAgain: document.getElementById("btn-mem-again"),
+
+  /* 账号与积分：两个独立入口 */
+  accountName: document.getElementById("account-name"),
+  pointsValue: document.getElementById("points-value"),
+  btnAccount: document.getElementById("btn-account"),
+  btnShop: document.getElementById("btn-shop"),
+  resultSync: document.getElementById("result-sync"),
+  user: document.getElementById("user"),
+  userMask: document.getElementById("user-mask"),
+  userClose: document.getElementById("user-close"),
+  userDone: document.getElementById("user-done"),
+  userTitle: document.getElementById("user-title"),
+  tabAccount: document.getElementById("tab-account"),
+  tabShop: document.getElementById("tab-shop"),
+  viewAccount: document.getElementById("view-account"),
+  viewShop: document.getElementById("view-shop"),
+  accountSub: document.getElementById("account-sub"),
+  shopSub: document.getElementById("shop-sub"),
+  authBox: document.getElementById("auth-box"),
+  meBox: document.getElementById("me-box"),
+  authEmail: document.getElementById("auth-email"),
+  authPass: document.getElementById("auth-pass"),
+  authTip: document.getElementById("auth-tip"),
+  btnLogin: document.getElementById("btn-login"),
+  btnRegister: document.getElementById("btn-register"),
+  btnLogout: document.getElementById("btn-logout"),
+  btnSync: document.getElementById("btn-sync"),
+  meName: document.getElementById("me-name"),
+  mePoints: document.getElementById("me-points"),
+  mePending: document.getElementById("me-pending"),
+  meItems: document.getElementById("me-items"),
+  shopList: document.getElementById("shop-list")
 };
 
 /* 当前这一轮的状态 */
 const state = {
   selected: ALL_SONGS.slice(), /* 已勾选的歌曲 */
   mode: "line",      /* 当前玩法 */
-  roundSize: 10,     /* 每轮抽多少题 */
+  roundSize: 10,     /* 每轮抽多少题（狂飙模式里是秒数） */
   deck: [],          /* 本轮洗好的题目顺序 */
   index: 0,          /* 当前第几题（从 0 开始） */
   score: 0,          /* 已得分数 */
   rightCount: 0,     /* 答对题数 */
+  answered: 0,       /* 实际作答题数（狂飙模式中途结束时要靠它算正确率） */
+  rushLeft: 0,       /* 狂飙模式剩余秒数 */
+  rushTicker: 0,     /* 狂飙模式倒计时器的编号 */
+  questionStart: 0,  /* 当前这题的开始时刻，用来算答题耗时（服务端会看这个防脚本） */
+  lastEarned: 0,     /* 刚结束那一轮的得分，结算页要显示 */
   locked: false,     /* 判断与切题期间锁住输入，避免重复提交 */
   timer: 0           /* 自动进入下一题的定时器编号 */
 };
@@ -881,8 +958,8 @@ function renderModeGroup() {
     btn.addEventListener("click", function () {
       if (state.mode === mode.id) return;
       state.mode = mode.id;
-      /* 换玩法后如果原来的题数不被支持，就回到 10 题 */
-      if (mode.sizes.indexOf(state.roundSize) === -1) state.roundSize = 10;
+      /* 换玩法后如果原来那一档不被支持，就用这个玩法的默认档 */
+      if (mode.sizes.indexOf(state.roundSize) === -1) state.roundSize = mode.defaultSize;
       syncModeGroup();
       renderSizeGroup();
       updatePoolInfo();
@@ -899,21 +976,25 @@ function syncModeGroup() {
   for (let i = 0; i < buttons.length; i++) {
     buttons[i].classList.toggle("is-on", buttons[i].getAttribute("data-mode") === state.mode);
   }
-  el.modeIntro.textContent = currentMode().intro;
+  const mode = currentMode();
+  el.modeIntro.textContent = mode.intro;
+  el.modeHint.textContent = mode.hint;
 }
 
-/* 画「每轮题数」按钮，选项随玩法变化；记忆翻牌是固定 4 × 4，不需要这一栏 */
+/* 画「每轮题数」按钮：档位、标签、单位都随玩法变化。
+   记忆翻牌固定 4 × 4，整栏收起来 */
 function renderSizeGroup() {
-  const sizes = currentMode().sizes;
+  const mode = currentMode();
 
-  el.sizeBlock.hidden = sizes.length === 0;
+  el.sizeBlock.hidden = mode.sizes.length === 0;
+  el.sizeLabel.textContent = mode.sizeLabel;
   el.sizeGroup.innerHTML = "";
 
-  sizes.forEach(function (size) {
+  mode.sizes.forEach(function (size) {
     const btn = document.createElement("button");
     btn.type = "button";
     btn.className = "seg-btn";
-    btn.textContent = size + " 题";
+    btn.textContent = size + mode.sizeUnit;
     btn.setAttribute("data-size", size);
     btn.addEventListener("click", function () {
       state.roundSize = size;
@@ -1047,6 +1128,8 @@ function pickDistractors(item, count) {
 /* 组装本题选项：一个正确答案加若干干扰项，顺序打乱 */
 function buildOptions(item) {
   if (state.mode === "song") return buildSongOptions(item);
+  if (state.mode === "blank") return buildBlankOptions(item);
+  if (state.mode === "odd") return buildOddOptions(item);
   const options = [item.a].concat(pickDistractors(item, OPTION_COUNT - 1));
   return shuffle(options);
 }
@@ -1060,9 +1143,230 @@ function buildSongOptions(item) {
   return shuffle(options);
 }
 
-/* 本题的正确答案（猜歌名时是歌名，接歌词时是下半句） */
+/* 本题的正确答案：猜歌名是歌名、填空补词是那个词、找异句是那句外来的，
+   接歌词和限时狂飙都是下半句 */
 function rightAnswer(item) {
-  return state.mode === "song" ? item.song : item.a;
+  const mode = state.mode;
+  if (mode === "song") return item.song;
+  if (mode === "blank") return blankWord(item);
+  if (mode === "odd") return foreignLine(item);
+  return item.a;
+}
+
+/* ---------- 填空补词 ---------- */
+
+/* 把字符串折成一个稳定的正整数：用来给题目"定"一个不随机的选择，
+   这样答题页和导出的卷子用的是同一个空、同一句外来歌词 */
+function hashOf(text) {
+  let h = 0;
+  for (let i = 0; i < text.length; i++) {
+    h = (h * 31 + text.charCodeAt(i)) % 2147483647;
+  }
+  return h;
+}
+
+/*
+ * 题目指纹。服务端复核答题流水时要用它查题库，所以这个字符串必须是
+ * "只由题目本身决定、前后端算出来完全一样"的。
+ * 用两个方向各算一次哈希再拼起来，把碰撞概率压到可以忽略。
+ */
+function questionId(item) {
+  const text = item.song + "|" + item.q + "|" + item.a;
+  const back = text.split("").reverse().join("");
+  return hashOf(text).toString(36) + "-" + hashOf(back).toString(36);
+}
+
+/* 是不是汉字 */
+function isHan(ch) {
+  return /[\u4e00-\u9fff]/.test(ch);
+}
+
+/* 一句话里所有能挖成「两字词」的位置：必须是连续两个汉字，
+   免得把标点或空格挖掉 */
+function wordSpots(text) {
+  const spots = [];
+  for (let i = 0; i + 1 < text.length; i++) {
+    if (isHan(text[i]) && isHan(text[i + 1])) spots.push(i);
+  }
+  return spots;
+}
+
+/* 从一句话里按 seed 取一个两字词，取不到返回空串 */
+function twoCharWord(text, seed) {
+  const spots = wordSpots(text);
+  if (spots.length === 0) return "";
+  const at = spots[seed % spots.length];
+  return text.slice(at, at + 2);
+}
+
+/* 本题要挖掉的位置和词；挖不出来就返回 null */
+function blankSpot(item) {
+  const text = item.a;
+  const spots = wordSpots(text);
+  if (spots.length === 0) return null;
+
+  /* 优先挑在整句里只出现一次的词：不然挖掉之后原句里还留着一样的词，会说不清该填哪一处 */
+  const single = spots.filter(function (at) {
+    const word = text.slice(at, at + 2);
+    return text.indexOf(word) === text.lastIndexOf(word);
+  });
+  const pool = single.length > 0 ? single : spots;
+  const at = pool[hashOf(text) % pool.length];
+
+  return { at: at, word: text.slice(at, at + 2) };
+}
+
+/* 本题被挖掉的那个词 */
+function blankWord(item) {
+  const spot = blankSpot(item);
+  return spot ? spot.word : item.a;
+}
+
+/* 把歌词里的那个词换成占位符 */
+function blankedLine(item) {
+  const spot = blankSpot(item);
+  if (!spot) return item.a;
+  return item.a.slice(0, spot.at) + BLANK_MARK + item.a.slice(spot.at + 2);
+}
+
+/* 填空补词的选项：正确答案是那个词，干扰词从别的句子里取。
+   要求干扰词不出现在原句中，否则玩家会以为它也能填进去 */
+function buildBlankOptions(item) {
+  const word = blankWord(item);
+  const line = item.a;
+
+  /* 挖不出词就退化成接歌词的选项（现有题库不会走到这里） */
+  if (!word || word === line) {
+    return shuffle([item.a].concat(pickDistractors(item, OPTION_COUNT - 1)));
+  }
+
+  const sameSong = shuffle(QUESTIONS.filter(function (other) {
+    return other !== item && other.song === item.song;
+  }));
+  const otherSong = shuffle(QUESTIONS.filter(function (other) {
+    return other.song !== item.song;
+  }));
+
+  const picked = [];
+  [sameSong, otherSong].forEach(function (list) {
+    for (let i = 0; i < list.length && picked.length < OPTION_COUNT - 1; i++) {
+      const cand = twoCharWord(list[i].a, hashOf(list[i].a));
+      if (!cand || cand === word) continue;
+      if (line.indexOf(cand) > -1) continue;
+      if (picked.indexOf(cand) > -1) continue;
+      picked.push(cand);
+    }
+  });
+
+  return shuffle([word].concat(picked));
+}
+
+/* ---------- 找异句 ---------- */
+
+/* 这首歌在题库里出现过的所有句子，归一化后放进集合，用来判断撞车 */
+function songLineSet(song) {
+  const set = new Set();
+  QUESTIONS.forEach(function (item) {
+    if (item.song !== song) return;
+    set.add(normalize(item.q));
+    set.add(normalize(item.a));
+  });
+  return set;
+}
+
+/* 这首歌自己的歌词，去重后按题库顺序排好 */
+function uniqueSongLines(song) {
+  const seen = {};
+  const list = [];
+  QUESTIONS.forEach(function (item) {
+    if (item.song !== song) return;
+    const key = normalize(item.a);
+    if (!key || seen[key]) return;
+    seen[key] = true;
+    list.push(item.a);
+  });
+  return list;
+}
+
+/* 「找异句」里那一句不属于本题歌曲的歌词 */
+function foreignLine(item) {
+  const mine = songLineSet(item.song);
+  const seen = {};
+  const candidates = [];
+
+  QUESTIONS.forEach(function (q) {
+    if (q.song === item.song) return;
+    const key = normalize(q.a);
+    if (!key || mine.has(key) || seen[key]) return;
+    seen[key] = true;
+    candidates.push(q.a);
+  });
+
+  /* 至少还有 22 首别的歌，理论上不会空；真空了就随便取一句别的歌的 */
+  if (candidates.length === 0) {
+    const other = QUESTIONS.filter(function (q) {
+      return q.song !== item.song;
+    });
+    return other.length > 0 ? other[0].a : item.a;
+  }
+
+  return candidates[hashOf(item.a + "|" + item.song) % candidates.length];
+}
+
+/* 某句歌词出自哪首歌（找异句答错时告诉玩家是哪首的） */
+function songOfLine(line) {
+  for (let i = 0; i < QUESTIONS.length; i++) {
+    if (QUESTIONS[i].a === line) return QUESTIONS[i].song;
+  }
+  return "";
+}
+
+/* 找异句的选项：三句出自本题歌曲，一句来自别的歌 */
+function buildOddOptions(item) {
+  const mine = uniqueSongLines(item.song);
+  const foreign = foreignLine(item);
+  const options = [foreign];
+
+  /* 从这首歌的歌词里定序取三句，跳过与已选项撞车的 */
+  const seed = hashOf(item.a + "|" + item.song);
+  for (let i = 0; i < mine.length && options.length < OPTION_COUNT; i++) {
+    const line = mine[(seed + i) % mine.length];
+    let clash = false;
+    for (let k = 0; k < options.length; k++) {
+      if (equivalent(line, options[k])) { clash = true; break; }
+    }
+    if (clash) continue;
+    options.push(line);
+  }
+
+  return shuffle(options);
+}
+
+/* ---------- 题干 ---------- */
+
+/* 猜歌名时展示的那句歌词：答题时随机抽上/下半句（免得背题），导卷子固定用下半句 */
+function songLineOf(item, randomPick) {
+  if (randomPick && Math.random() < 0.5) return item.q;
+  return item.a;
+}
+
+/* 本题的题干。forPrint 为真时带上歌名，让卷子上的题自己说得清 */
+function stemOf(item, forPrint) {
+  const mode = state.mode;
+  const prefix = forPrint ? "《" + item.song + "》 " : "";
+
+  if (mode === "song") {
+    const line = forPrint ? songLineOf(item, false) : songLineOf(item, true);
+    return forPrint ? "「" + line + "」——这是哪首歌？" : line;
+  }
+
+  if (mode === "blank") return prefix + blankedLine(item);
+
+  if (mode === "odd") {
+    return forPrint ? "《" + item.song + "》里，哪一句不是它的？" : "哪一句不是这首歌的？";
+  }
+
+  return prefix + item.q;
 }
 
 /* ---------- 游戏流程 ---------- */
@@ -1097,20 +1401,24 @@ function renderQuestion() {
   const item = state.deck[state.index];
   const songMode = state.mode === "song";
 
-  el.progress.textContent = "第 " + (state.index + 1) + " / " + state.deck.length + " 题";
+  /* 狂飙模式的进度位让给倒计时 */
+  if (state.mode === "rush") {
+    updateRushLabel();
+  } else {
+    el.progress.textContent = "第 " + (state.index + 1) + " / " + state.deck.length + " 题";
+  }
   el.scoreNow.textContent = state.score + " 分";
 
-  /* 猜歌名模式不能显示歌名，否则答案就露馅了 */
+  /* 猜歌名模式不能显示歌名，否则答案就露馅了。
+     找异句反过来，必须显示歌名，题目问的就是"哪句不是这首歌的" */
   el.songName.hidden = songMode;
   el.songName.textContent = "《" + item.song + "》";
 
-  /* 猜歌名时上半句下半句随机抽一句展示 */
-  el.questionLine.textContent = songMode
-    ? (Math.random() < 0.5 ? item.q : item.a)
-    : item.q;
+  el.questionLine.textContent = songMode ? songLineOf(item, true) : stemOf(item, false);
 
   clearFeedback();
   state.locked = false;
+  state.questionStart = Date.now();   /* 服务端要拿答题耗时判断是不是脚本刷的 */
   renderOptions(item);
 }
 
@@ -1149,6 +1457,7 @@ function renderOptions(item) {
 /* 开始（或重新开始）一轮 */
 function startGame() {
   clearTimeout(state.timer);
+  stopRushTimer();
   closeReview();
 
   /* 记忆翻牌走自己的一套流程 */
@@ -1164,11 +1473,23 @@ function startGame() {
   if (pool.length === 0) return;
   if (state.mode === "song" && state.selected.length < 2) return;
 
-  state.deck = shuffle(pool).slice(0, Math.min(state.roundSize, pool.length));
   state.index = 0;
   state.score = 0;
   state.rightCount = 0;
+  state.answered = 0;
   state.locked = false;
+
+  /* 限时狂飙不按题数出卷，而是把整库洗一遍，答到时间结束为止 */
+  if (state.mode === "rush") {
+    state.deck = shuffle(pool);
+    state.rushLeft = state.roundSize;
+    showScreen("quiz");
+    renderQuestion();
+    startRushTimer();
+    return;
+  }
+
+  state.deck = shuffle(pool).slice(0, Math.min(state.roundSize, pool.length));
 
   showScreen("quiz");
   renderQuestion();
@@ -1176,12 +1497,41 @@ function startGame() {
 
 /* 进入下一题或结算 */
 function goNext() {
+  /* 已经离开答题页就别再跳了（狂飙模式时间到的瞬间可能正好卡在这） */
+  if (!el.screens.quiz.classList.contains("is-active")) return;
+
   state.index++;
   if (state.index >= state.deck.length) {
     finishGame();
   } else {
     renderQuestion();
   }
+}
+
+/* 答完一题反馈停留多久：狂飙模式要快节奏，时间都耗在等动画上就不爽了 */
+function delayFor(isRight) {
+  if (state.mode === "rush") return isRight ? RUSH_DELAY_CORRECT : RUSH_DELAY_WRONG;
+  return isRight ? DELAY_CORRECT : DELAY_WRONG;
+}
+
+/* 答对 / 答错的反馈文案，按玩法换说法 */
+function feedbackText(isRight, item, answer) {
+  const mode = state.mode;
+
+  if (isRight) {
+    if (mode === "song") return "✓ 猜对了！";
+    if (mode === "blank") return "✓ 补对了！";
+    if (mode === "odd") return "✓ 眼真尖！";
+    return "✓ 接上了！";
+  }
+
+  if (mode === "song") return "✗ 这首歌是：《" + item.song + "》";
+  if (mode === "blank") return "✗ 应该填：" + answer;
+  if (mode === "odd") {
+    const from = songOfLine(answer);
+    return from ? "✗ 那一句是《" + from + "》的" : "✗ 那句不属于这首歌";
+  }
+  return "✗ 原句是：" + item.a;
 }
 
 /* 点了某个选项后立刻判定 */
@@ -1194,17 +1544,21 @@ function chooseOption(btn, value, item) {
     buttons[i].disabled = true;
   }
 
-  const songMode = state.mode === "song";
   const answer = rightAnswer(item);
+  state.answered++;
+
+  /* 记一条答题流水。本地只记"第几题、选了什么、用了多久"，
+     分数要等服务端拿它自己的题库复核完才算数 */
+  recordAnswer(item, value, value === answer);
 
   if (value === answer) {
     state.score += SCORE_PER_QUESTION;
     state.rightCount++;
     el.scoreNow.textContent = state.score + " 分";
     btn.classList.add("is-right");
-    el.feedback.textContent = songMode ? "✓ 猜对了！" : "✓ 接上了！";
+    el.feedback.textContent = feedbackText(true, item, answer);
     el.feedback.className = "feedback is-ok";
-    state.timer = setTimeout(goNext, DELAY_CORRECT);
+    state.timer = setTimeout(goNext, delayFor(true));
   } else {
     btn.classList.add("is-wrong");
     /* 同时把正确答案标绿，其余几条淡下去，方便对照 */
@@ -1216,17 +1570,48 @@ function chooseOption(btn, value, item) {
         buttons[i].classList.add("is-dim");
       }
     }
-    el.feedback.textContent = songMode
-      ? "✗ 这首歌是：《" + item.song + "》"
-      : "✗ 原句是：" + item.a;
+    el.feedback.textContent = feedbackText(false, item, answer);
     el.feedback.className = "feedback is-err";
-    state.timer = setTimeout(goNext, DELAY_WRONG);
+    state.timer = setTimeout(goNext, delayFor(false));
+  }
+}
+
+/* ---------- 限时狂飙 ---------- */
+
+/* 把倒计时写到进度位上，最后几秒标红 */
+function updateRushLabel() {
+  const left = Math.max(0, state.rushLeft);
+  el.progress.textContent = "剩余 " + left + " 秒";
+  el.progress.classList.toggle("is-urgent", left <= RUSH_URGENT);
+}
+
+function startRushTimer() {
+  if (state.rushTicker) return;
+  updateRushLabel();
+
+  state.rushTicker = setInterval(function () {
+    state.rushLeft--;
+    updateRushLabel();
+    if (state.rushLeft <= 0) finishGame();
+  }, 1000);
+}
+
+function stopRushTimer() {
+  if (state.rushTicker) {
+    clearInterval(state.rushTicker);
+    state.rushTicker = 0;
   }
 }
 
 /* 结算：算出总分与正确率 */
 function finishGame() {
-  const total = state.deck.length;
+  /* 先把待跳题和倒计时都停掉，否则结算后还会再跳一题、把结果页盖掉 */
+  clearTimeout(state.timer);
+  stopRushTimer();
+  state.locked = true;
+
+  /* 狂飙模式是中途结束的，分母得用作答题数而不是整库题数 */
+  const total = state.answered > 0 ? state.answered : state.deck.length;
   const accuracy = total === 0 ? 0 : Math.round((state.rightCount / total) * 100);
 
   el.finalScore.textContent = state.score;
@@ -1234,7 +1619,15 @@ function finishGame() {
   el.finalRight.textContent = state.rightCount + " / " + total + " 题";
   el.finalRank.textContent = rankText(accuracy);
 
+  /* 本局积分与总积分 */
+  state.lastEarned = state.score;
+  refreshPointsUI();
+  renderResultSync();
+
   showScreen("result");
+
+  /* 登录状态下顺手把流水交上去；失败也不打断结算页 */
+  syncNow(false);
 }
 
 /* 根据正确率给一句评价 */
@@ -1297,6 +1690,7 @@ function pickLyricPair(song) {
 function startMemory() {
   clearTimeout(mem.backTimer);
   stopMemoryTimer();
+  stopRushTimer();
   closeCelebrate();
   closeReview();
 
@@ -1496,6 +1890,7 @@ function backToStart() {
   stopMemoryTimer();
   closeCelebrate();
   closeReview();
+  refreshPointsUI();   /* 回首页前把积分刷一遍，免得显示旧数 */
   showScreen("start");
 }
 
@@ -1652,9 +2047,8 @@ function exportQuestions() {
 
     const question = document.createElement("div");
     question.className = "print-q";
-    question.textContent = (i + 1) + ". " + (songMode
-      ? "「" + item.a + "」——这是哪首歌？"
-      : "《" + item.song + "》 " + item.q);
+    /* 题干按当前玩法生成：猜歌名带书名号提示、填空补词带空位、找异句带问法 */
+    question.textContent = (i + 1) + ". " + stemOf(item, true);
     block.appendChild(question);
 
     const optionLine = document.createElement("div");
@@ -1680,6 +2074,520 @@ function exportQuestions() {
   window.print();
 }
 
+/* ---------- 积分、账号与同步 ---------- */
+
+/*
+ * store.js / api.js 万一没加载成功（文件被删、被拦、离线缓存坏了），
+ * 用空实现顶上。游戏本体绝不能被这两个文件拖垮。
+ */
+const LocalStore = (typeof Store !== "undefined") ? Store : {
+  points: function () { return 0; },
+  isLoggedIn: function () { return false; },
+  nickname: function () { return ""; },
+  inventory: function () { return []; },
+  pendingCount: function () { return 0; },
+  session: function () { return null; },
+  setSession: function () {},
+  clearSession: function () {},
+  logAnswer: function () { return 0; },
+  pendingAnswers: function () { return []; },
+  confirmSync: function () {},
+  setCache: function () {},
+  reset: function () {}
+};
+
+const Backend = (typeof Api !== "undefined") ? Api : {
+  configured: function () { return false; },
+  signIn: function () { return Promise.resolve({ ok: false, error: "后端未加载" }); },
+  signUp: function () { return Promise.resolve({ ok: false, error: "后端未加载" }); },
+  signOut: function () { return Promise.resolve({ ok: true }); },
+  refreshSession: function () { return Promise.resolve({ ok: false, error: "后端未加载" }); },
+  me: function () { return Promise.resolve({ ok: false, error: "后端未加载" }); },
+  syncRuns: function () { return Promise.resolve({ ok: false, error: "后端未加载" }); },
+  shopItems: function () { return Promise.resolve({ ok: false, error: "后端未加载" }); },
+  buyItem: function () { return Promise.resolve({ ok: false, error: "后端未加载" }); },
+  useItem: function () { return Promise.resolve({ ok: false, error: "后端未加载" }); }
+};
+
+/* 商店目录：服务端拉回来之后缓存在这儿，"已拥有"列表也要用它显示名字 */
+let SHOP_ITEMS = [];
+const SHOP_META = {};
+
+/*
+ * 参与计分的玩法名。
+ * 限时狂飙用的就是接歌词那套题，所以按 line 记，服务端才查得到答案；
+ * 记忆翻牌不比分数，不产生流水。
+ */
+function scoredModeOf(mode) {
+  if (mode === "rush") return "line";
+  if (mode === "memory") return "";
+  return mode;
+}
+
+/* 刷新开始页上的两个入口：账号按钮显示登录状态，积分按钮显示余额 */
+function refreshPointsUI() {
+  el.pointsValue.textContent = String(LocalStore.points());
+
+  const logged = LocalStore.isLoggedIn();
+  el.accountName.textContent = logged ? (LocalStore.nickname() || "已登录") : "登录";
+  el.accountName.classList.toggle("is-on", logged);
+}
+
+/*
+ * 记一条答题流水。
+ * 记的是"第几题、选了什么、用了多久"，不是分数 —— 分数由服务端复核后给。
+ * 没登录也照记，等登录后一起补交。
+ */
+function recordAnswer(item, choice, correct) {
+  const mode = scoredModeOf(state.mode);
+  if (!mode) return;
+
+  LocalStore.logAnswer({
+    id: questionId(item),
+    mode: mode,
+    choice: choice,
+    ms: Math.max(0, Date.now() - state.questionStart)
+  }, correct ? SCORE_PER_QUESTION : 0);
+
+  refreshPointsUI();
+}
+
+/* 结算页那行小字 */
+function renderResultSync() {
+  const pending = LocalStore.pendingCount();
+
+  let suffix;
+  if (!Backend.configured()) suffix = "（只存在这台设备上）";
+  else if (!LocalStore.isLoggedIn()) suffix = "（登录后会自动同步到账号）";
+  else if (pending > 0) suffix = "（" + pending + " 条待同步）";
+  else suffix = "（已同步）";
+
+  el.resultSync.textContent = "本局得分 " + (state.lastEarned || 0) + " 分 · 总积分 "
+    + LocalStore.points() + " 分" + suffix;
+}
+
+/*
+ * 算这一批流水的批次号，服务端靠它做幂等。
+ * 必须**由批次内容决定**，不能用时间戳：
+ *   1. 用时间戳的话，同一毫秒内的两批会撞号，第二批会被当成重复、分数直接丢；
+ *   2. 内容决定才能扛住重试 —— 服务端处理完了但响应在路上丢了，
+ *      客户端重发同一批时批次号不变，服务端才认得出"这批我处理过了"。
+ */
+function batchIdOf(batch) {
+  const text = batch.map(function (r) {
+    return r.k + ":" + r.id + ":" + r.mode + ":" + r.choice;
+  }).join("|");
+  const back = text.split("").reverse().join("");
+  return "b" + hashOf(text).toString(36) + "-" + hashOf(back).toString(36);
+}
+
+/* 取一个可用的登录凭证：快过期就先续期，续不动就当登录失效 */
+async function authToken() {
+  const s = LocalStore.session();
+  if (!s || !s.accessToken) return "";
+
+  if (s.expiresAt && Date.now() > s.expiresAt - 60000 && s.refreshToken) {
+    const r = await Backend.refreshSession(s.refreshToken);
+    if (r.ok) {
+      LocalStore.setSession({
+        accessToken: r.session.accessToken,
+        refreshToken: r.session.refreshToken,
+        expiresAt: r.session.expiresAt,
+        userId: r.session.userId,
+        email: r.session.email,
+        nickname: s.nickname || r.session.nickname
+      });
+      return LocalStore.session().accessToken;
+    }
+    /* 网络问题不算登录失效，只有服务端明确拒绝才清掉 */
+    if (!r.offline) LocalStore.clearSession();
+    return "";
+  }
+
+  return s.accessToken;
+}
+
+/* 把本地流水交给服务端复核入账 */
+async function syncNow(manual) {
+  if (!LocalStore.isLoggedIn()) {
+    if (manual) setAuthTip("先在下面登录，登录后会自动把本机记录交上去", false);
+    return { ok: false, error: "未登录" };
+  }
+  if (!Backend.configured()) {
+    if (manual) setAuthTip("还没配置后端，现在是纯本地模式", false);
+    return { ok: false, error: "未配置后端" };
+  }
+
+  const batch = LocalStore.pendingAnswers();
+  if (batch.length === 0) {
+    /* 没有流水可交，但余额还是要拉一次 —— 换台设备登录时全靠这一步 */
+    await refreshUser(manual);
+    if (manual) setAuthTip("没有待同步的答题记录", true);
+    return { ok: true, nothing: true };
+  }
+
+  const token = await authToken();
+  if (!token) {
+    setAuthTip("登录已过期，重新登录一下吧", false);
+    refreshPointsUI();
+    return { ok: false, error: "登录已过期" };
+  }
+
+  const items = batch.map(function (r) {
+    return { id: r.id, mode: r.mode, choice: r.choice, ms: r.ms };
+  });
+  /* 批次号由内容算出：重复上传同一批只会入账一次，不同批也绝不会撞号 */
+  const res = await Backend.syncRuns(token, items, batchIdOf(batch));
+  if (!res.ok) {
+    if (manual) setAuthTip(res.error || "同步失败", false);
+    return res;
+  }
+
+  LocalStore.confirmSync(batch.map(function (r) { return r.k; }), res.data && res.data.balance);
+  refreshPointsUI();
+  if (el.screens.result.classList.contains("is-active")) renderResultSync();
+
+  if (manual) {
+    const got = (res.data && res.data.awarded) || 0;
+    setAuthTip(got > 0 ? ("同步完成，入账 " + got + " 分") : "同步完成，这一批没有新的得分", true);
+  }
+  renderAccount();
+  return res;
+}
+
+/* 拉一次服务端上的账号状态 */
+async function refreshUser(manual) {
+  if (!LocalStore.isLoggedIn() || !Backend.configured()) {
+    renderAccount();
+    return;
+  }
+  const token = await authToken();
+  if (!token) { renderAccount(); return; }
+
+  const r = await Backend.me(token);
+  if (r.ok) {
+    LocalStore.setCache(r.data);
+    refreshPointsUI();
+    renderAccount();
+  } else if (manual) {
+    setAuthTip(r.error || "读取账号失败", false);
+  }
+}
+
+/*
+ * 拉商品目录。
+ * 「已拥有的物品」也要靠它把 code 翻成商品名，所以进弹窗时就顺手拉一次，
+ * 不只在商店页里拉。force 为真时强制重新拉（点「刷新」之类的场景）。
+ */
+async function loadShop(manual, force) {
+  if (!Backend.configured()) { renderShop(); return; }
+  if (!force && SHOP_ITEMS.length > 0) { renderShop(); return; }
+
+  const token = await authToken();
+  const r = await Backend.shopItems(token);
+  if (!r.ok) {
+    if (manual) setShopTip(r.error || "商品没加载出来");
+    renderShop();
+    return;
+  }
+
+  SHOP_ITEMS = r.data;
+  r.data.forEach(function (it) { SHOP_META[it.code] = it; });
+
+  /* 目录到手之后，两个视图都要按新数据重画一遍 */
+  renderShop();
+  renderOwnedItems();
+}
+
+/* ---------- 账号 / 商店弹窗 ---------- */
+
+function setAuthTip(text, good) {
+  el.authTip.textContent = text || "";
+  el.authTip.className = "form-tip" + (good ? " is-ok" : "");
+}
+
+let shopTipTimer = 0;
+function setShopTip(text, good) {
+  el.shopSub.textContent = text || "";
+  el.shopSub.style.color = good ? "var(--ok)" : "var(--err)";
+  clearTimeout(shopTipTimer);
+  shopTipTimer = setTimeout(function () {
+    el.shopSub.style.color = "";
+    renderShop();
+  }, 2600);
+}
+
+function showUserView(name) {
+  const shop = name === "shop";
+  el.viewAccount.hidden = shop;
+  el.viewShop.hidden = !shop;
+  el.tabAccount.classList.toggle("is-on", !shop);
+  el.tabShop.classList.toggle("is-on", shop);
+  el.userTitle.textContent = shop ? "积分商店" : "我的账号";
+
+  if (shop) {
+    renderShop();
+    loadShop(false);
+  } else {
+    renderAccount();
+  }
+}
+
+function openUser(view) {
+  el.user.hidden = false;
+  setAuthTip("");
+  refreshPointsUI();
+  showUserView(view || "account");
+
+  /* 商品目录要拉一次，不然「已拥有」列表只能显示内部代号 */
+  loadShop(false);
+  if (LocalStore.isLoggedIn()) refreshUser(false);
+}
+
+function closeUser() {
+  el.user.hidden = true;
+}
+
+/* 账号视图 */
+function renderAccount() {
+  const logged = LocalStore.isLoggedIn();
+  el.authBox.hidden = logged;
+  el.meBox.hidden = !logged;
+  el.pointsValue.textContent = String(LocalStore.points());
+
+  if (!Backend.configured()) {
+    /* 纯本地模式不加说明，整行收起，免得留一条空的虚线 */
+    el.accountSub.textContent = "";
+    el.accountSub.hidden = true;
+  } else if (logged) {
+    el.accountSub.hidden = false;
+    el.accountSub.textContent = "已登录。分数跟着账号走，换设备、换浏览器都能接着玩。";
+  } else {
+    el.accountSub.hidden = false;
+    el.accountSub.textContent = "登录后分数绑定账号。不登录也能玩，记录先存在本机，登录后自动补交。";
+  }
+
+  if (!logged) return;
+
+  el.meName.textContent = LocalStore.nickname();
+  el.mePoints.textContent = String(LocalStore.points());
+  el.mePending.textContent = LocalStore.pendingCount() + " 条";
+  renderOwnedItems();
+}
+
+/* 「已拥有的物品」列表 */
+function renderOwnedItems() {
+  el.meItems.innerHTML = "";
+  const owned = LocalStore.inventory();
+
+  if (owned.length === 0) {
+    const empty = document.createElement("p");
+    empty.className = "shop-desc";
+    empty.textContent = "还没兑换过东西，去「积分商店」看看～";
+    el.meItems.appendChild(empty);
+    return;
+  }
+
+  owned.forEach(function (it) {
+    const meta = SHOP_META[it.code] || {};
+
+    const row = document.createElement("div");
+    row.className = "shop-item is-owned";
+
+    const info = document.createElement("div");
+    info.className = "shop-info";
+
+    const name = document.createElement("p");
+    name.className = "shop-name";
+    name.textContent = meta.name || it.code;
+
+    const tag = document.createElement("span");
+    tag.className = "shop-tag";
+    /* 目录还没拉到时不硬猜类型，只报数量 */
+    if (meta.category === "consumable") tag.textContent = "剩 " + it.count + " 个";
+    else if (meta.category === "permanent") tag.textContent = "已拥有";
+    else tag.textContent = it.count > 1 ? (it.count + " 个") : "已拥有";
+    name.appendChild(tag);
+
+    info.appendChild(name);
+    row.appendChild(info);
+    el.meItems.appendChild(row);
+  });
+}
+
+/* 商店视图 */
+function renderShop() {
+  el.pointsValue.textContent = String(LocalStore.points());
+  el.shopList.innerHTML = "";
+
+  if (!Backend.configured()) {
+    el.shopSub.textContent = "商店需要后端支持，现在还没配置。";
+    return;
+  }
+
+  const logged = LocalStore.isLoggedIn();
+  el.shopSub.textContent = logged
+    ? ("当前积分 " + LocalStore.points() + "，兑换后立刻到账。")
+    : "登录后才能兑换，先切到「账号」登录一下吧。";
+
+  if (SHOP_ITEMS.length === 0) {
+    const tip = document.createElement("p");
+    tip.className = "shop-desc";
+    tip.textContent = "商品还没加载出来，稍等一下～";
+    el.shopList.appendChild(tip);
+    return;
+  }
+
+  const ownedMap = {};
+  LocalStore.inventory().forEach(function (it) { ownedMap[it.code] = it.count; });
+
+  SHOP_ITEMS.forEach(function (it) {
+    const owned = ownedMap[it.code] || 0;
+    const alreadyOwn = it.category === "permanent" && owned > 0;
+
+    const row = document.createElement("div");
+    row.className = "shop-item" + (alreadyOwn ? " is-owned" : "");
+
+    const info = document.createElement("div");
+    info.className = "shop-info";
+
+    const name = document.createElement("p");
+    name.className = "shop-name";
+    name.textContent = it.name;
+
+    const tag = document.createElement("span");
+    tag.className = "shop-tag";
+    if (it.category === "consumable") tag.textContent = owned > 0 ? ("已有 " + owned) : "消耗品";
+    else tag.textContent = alreadyOwn ? "已拥有" : "永久";
+    name.appendChild(tag);
+
+    const desc = document.createElement("p");
+    desc.className = "shop-desc";
+    desc.textContent = (it.descr || "") + "　" + it.price + " 积分";
+
+    info.appendChild(name);
+    info.appendChild(desc);
+    row.appendChild(info);
+
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "shop-buy";
+
+    if (alreadyOwn) {
+      btn.textContent = "已拥有";
+      btn.disabled = true;
+    } else if (!logged) {
+      btn.textContent = "登录后兑换";
+      btn.disabled = true;
+    } else if (LocalStore.points() < it.price) {
+      btn.textContent = "积分不够";
+      btn.disabled = true;
+    } else {
+      btn.textContent = "兑换";
+      btn.addEventListener("click", function () { buyItem(it, btn); });
+    }
+
+    row.appendChild(btn);
+    el.shopList.appendChild(row);
+  });
+}
+
+/* 兑换：扣分与发货都由服务端的一个事务完成 */
+async function buyItem(it, btn) {
+  if (btn.disabled) return;
+  btn.disabled = true;
+  btn.textContent = "兑换中";
+
+  const token = await authToken();
+  if (!token) {
+    setShopTip("登录已过期，重新登录一下吧");
+    return;
+  }
+
+  const r = await Backend.buyItem(token, it.code);
+  if (!r.ok) {
+    setShopTip(r.error || "兑换失败");
+    return;
+  }
+
+  await refreshUser(false);
+  refreshPointsUI();
+  setShopTip("兑换成功：" + it.name, true);
+}
+
+/* ---------- 登录 / 注册 / 退出 ---------- */
+
+/* 把服务端返回的会话存下来 */
+function adoptSession(s) {
+  LocalStore.setSession({
+    accessToken: s.accessToken,
+    refreshToken: s.refreshToken,
+    expiresAt: s.expiresAt,
+    userId: s.userId,
+    email: s.email,
+    nickname: s.nickname
+  });
+}
+
+/* 登录之后的共同收尾：拉账号、把本机流水补交上去 */
+async function afterLogin() {
+  refreshPointsUI();
+  renderAccount();
+  await refreshUser(false);
+  await syncNow(false);
+  renderAccount();
+}
+
+async function doLogin() {
+  if (!Backend.configured()) { setAuthTip("还没配置后端，现在只能本地玩", false); return; }
+
+  const email = el.authEmail.value.trim();
+  const pass = el.authPass.value;
+  if (!email || !pass) { setAuthTip("邮箱和密码都要填哦", false); return; }
+
+  setAuthTip("登录中……", true);
+  const r = await Backend.signIn(email, pass);
+  if (!r.ok) { setAuthTip(r.error || "登录失败", false); return; }
+
+  adoptSession(r.session);
+  el.authPass.value = "";
+  setAuthTip("登录成功，正在把本机的记录交上去……", true);
+  await afterLogin();
+}
+
+async function doRegister() {
+  if (!Backend.configured()) { setAuthTip("还没配置后端，现在只能本地玩", false); return; }
+
+  const email = el.authEmail.value.trim();
+  const pass = el.authPass.value;
+  if (!email || !pass) { setAuthTip("邮箱和密码都要填哦", false); return; }
+  if (pass.length < 6) { setAuthTip("密码至少 6 位", false); return; }
+
+  setAuthTip("注册中……", true);
+  const r = await Backend.signUp(email, pass);
+  if (!r.ok) { setAuthTip(r.error || "注册失败", false); return; }
+
+  /* 项目开了邮箱确认时不会直接给会话，得先去邮箱点链接 */
+  if (r.needConfirm) {
+    setAuthTip("注册成功！先去邮箱点一下确认链接，再回来登录", true);
+    return;
+  }
+
+  adoptSession(r.session);
+  el.authPass.value = "";
+  setAuthTip("注册成功，正在把本机的记录交上去……", true);
+  await afterLogin();
+}
+
+async function doLogout() {
+  const token = await authToken();
+  if (token) await Backend.signOut(token);
+  LocalStore.clearSession();
+  setAuthTip("已退出登录。本机记录还在，下次登录会继续同步", true);
+  refreshPointsUI();
+  renderAccount();
+}
+
 /* ---------- 绑定事件 ---------- */
 
 el.btnStart.addEventListener("click", startGame);
@@ -1698,6 +2606,27 @@ el.reviewClose.addEventListener("click", closeReview);
 el.reviewMask.addEventListener("click", closeReview);
 el.reviewDone.addEventListener("click", closeReview);
 
+/* 账号与积分商店：两个入口各进各的视图 */
+el.btnAccount.addEventListener("click", function () { openUser("account"); });
+el.btnShop.addEventListener("click", function () { openUser("shop"); });
+el.userClose.addEventListener("click", closeUser);
+el.userMask.addEventListener("click", closeUser);
+el.userDone.addEventListener("click", closeUser);
+el.tabAccount.addEventListener("click", function () { showUserView("account"); });
+el.tabShop.addEventListener("click", function () { showUserView("shop"); });
+el.btnLogin.addEventListener("click", doLogin);
+el.btnRegister.addEventListener("click", doRegister);
+el.btnLogout.addEventListener("click", doLogout);
+el.btnSync.addEventListener("click", function () { syncNow(true); });
+
+/* 密码框里按回车直接登录 */
+el.authPass.addEventListener("keydown", function (event) {
+  if (event.key === "Enter") {
+    event.preventDefault();
+    doLogin();
+  }
+});
+
 /* 歌曲库弹窗 */
 el.btnFilter.addEventListener("click", openModal);
 el.modalClose.addEventListener("click", closeModal);
@@ -1713,6 +2642,10 @@ el.checkAll.addEventListener("change", function () {
 /* 键盘：Esc 关弹窗，1 到 4 对应选 A 到 D */
 document.addEventListener("keydown", function (event) {
   if (event.key === "Escape") {
+    if (!el.user.hidden) {
+      closeUser();
+      return;
+    }
     if (!el.review.hidden) {
       closeReview();
       return;
@@ -1722,7 +2655,8 @@ document.addEventListener("keydown", function (event) {
       return;
     }
   }
-  if (state.locked || !el.modal.hidden || !el.review.hidden) return;
+  /* 有弹窗挡着的时候，1~4 不该被当成答题快捷键 */
+  if (state.locked || !el.modal.hidden || !el.review.hidden || !el.user.hidden) return;
 
   const at = ["1", "2", "3", "4"].indexOf(event.key);
   if (at === -1) return;
@@ -1736,3 +2670,9 @@ renderSizeGroup();
 renderSongRows();
 syncSongRows();
 clearFeedback();
+
+/* 开局先把账做一次：把本地已有的分数显示出来，
+   如果之前登录过且 token 还有效，再顺手拉一次服务端状态 */
+refreshPointsUI();
+renderAccount();
+if (LocalStore.isLoggedIn()) refreshUser(false);
