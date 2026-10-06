@@ -42,7 +42,8 @@ const Store = (function () {
       session: null,        /* 登录态：token 与账号信息 */
       answers: [],          /* 待上传的答题流水 */
       pendingPoints: 0,     /* 流水里已判定、还没被服务端确认的积分 */
-      cache: null           /* 上次同步拿到的服务端状态 */
+      cache: null,          /* 上次同步拿到的服务端状态 */
+      itemMeta: {}          /* 商品「代号 → 名字/类型」对照表 */
     };
   }
 
@@ -66,6 +67,7 @@ const Store = (function () {
       base.answers = Array.isArray(parsed.answers) ? parsed.answers : [];
       base.pendingPoints = Number(parsed.pendingPoints) || 0;
       base.cache = parsed.cache || null;
+      base.itemMeta = parsed.itemMeta && typeof parsed.itemMeta === "object" ? parsed.itemMeta : {};
       return base;
     } catch (error) {
       /* 数据坏了就当新用户 */
@@ -191,6 +193,42 @@ const Store = (function () {
     save();
   }
 
+  /* 改完昵称后同步更新本地，免得界面还显示旧的（session 里的会盖过 cache） */
+  function setNickname(name) {
+    if (state.session) state.session.nickname = name;
+    if (state.cache) state.cache.nickname = name;
+    save();
+  }
+
+  /*
+   * 商品「代号 → 名字/类型」的对照表。
+   * 存下来是为了商品目录拉不到（断网、服务抖动）时，「已拥有的物品」
+   * 也能显示中文名和"剩 N 个"，而不是光秃秃一个 hint5050。
+   */
+  function itemMeta() {
+    return state.itemMeta || {};
+  }
+
+  function setItemMeta(map) {
+    state.itemMeta = map || {};
+    save();
+  }
+
+  /* 用掉一个消耗型道具：本地库存先减一，真值以服务端为准，下次同步会被覆盖 */
+  function useOneItem(code) {
+    if (!state.cache || !Array.isArray(state.cache.inventory)) return 0;
+
+    let left = 0;
+    state.cache.inventory = state.cache.inventory.map(function (it) {
+      if (it.code !== code) return it;
+      const count = Math.max(0, (Number(it.count) || 0) - 1);
+      left = count;
+      return { code: it.code, count: count };
+    });
+    save();
+    return left;
+  }
+
   /* 全部清空 */
   function reset() {
     state = fresh();
@@ -213,6 +251,10 @@ const Store = (function () {
     pendingAnswers: pendingAnswers,
     confirmSync: confirmSync,
     setCache: setCache,
+    setNickname: setNickname,
+    itemMeta: itemMeta,
+    setItemMeta: setItemMeta,
+    useOneItem: useOneItem,
     reset: reset
   };
 })();
