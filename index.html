@@ -75,6 +75,9 @@
 
       <p class="question" id="question-line">上半句</p>
 
+      <!-- 已拥有的消耗型道具在这里用（没登录 / 没道具时整栏收起） -->
+      <div class="item-bar" id="item-bar" hidden></div>
+
       <div class="options" id="options"></div>
 
       <p class="feedback" id="feedback"></p>
@@ -218,6 +221,11 @@
         <!-- 未登录 -->
         <div id="auth-box">
           <label class="field">
+            <span class="field-label">昵称（注册时用，可以留空）</span>
+            <input class="field-input" id="auth-nick" type="text" maxlength="12" autocomplete="nickname"
+                   placeholder="锦依卫">
+          </label>
+          <label class="field">
             <span class="field-label">邮箱</span>
             <input class="field-input" id="auth-email" type="email" autocomplete="email"
                    placeholder="you@example.com">
@@ -236,9 +244,17 @@
 
         <!-- 已登录 -->
         <div id="me-box" hidden>
-          <div class="me-row"><span>昵称</span><b id="me-name">—</b></div>
           <div class="me-row"><span>积分余额</span><b id="me-points">0</b></div>
           <div class="me-row"><span>待同步答题</span><b id="me-pending">0 条</b></div>
+
+          <!-- 昵称可以自己改，改完写回账号 -->
+          <div class="nick-edit">
+            <input class="field-input nick-input" id="nick-input" type="text" maxlength="12"
+                   autocomplete="off" placeholder="起个名字">
+            <button class="btn btn-main nick-save" id="btn-save-nick" type="button">保存</button>
+          </div>
+          <p class="form-tip" id="nick-tip"></p>
+
           <p class="review-sub me-items-title">已拥有的物品</p>
           <div class="shop-list" id="me-items"></div>
           <div class="modal-foot">
