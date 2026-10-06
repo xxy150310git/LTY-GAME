@@ -394,6 +394,68 @@ body {
 }
 
 /* ===== 选项按钮 ===== */
+
+/* 道具栏：只放当前这道题还能用的道具，没登录 / 没道具时整栏收起 */
+.item-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin: 0 0 12px;
+}
+
+.item-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 7px 12px;
+  font-family: inherit;
+  font-size: 13px;
+  line-height: 1.2;
+  letter-spacing: 0.5px;
+  border: 1px solid #cbe8fb;
+  border-radius: 999px;
+  background: #f1faff;
+  color: #2f8fd0;
+  cursor: pointer;
+  transition: background 0.16s ease, border-color 0.16s ease, opacity 0.16s ease;
+}
+
+@media (hover: hover) {
+  .item-btn:hover:not([disabled]) {
+    border-color: #a9e2ff;
+    background: #e6f6ff;
+  }
+}
+
+.item-btn[disabled] {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.item-name {
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+.item-count {
+  font-size: 12px;
+  font-weight: 600;
+  opacity: 0.75;
+}
+
+/* 三种道具各配一点颜色，扫一眼就能分清（五五开用上面的默认蓝） */
+.item-btn[data-code="tolerance"] {
+  color: #0d7d52;
+  border-color: #c6eddc;
+  background: #f0fbf6;
+}
+
+.item-btn[data-code="reveal"] {
+  color: #b07a12;
+  border-color: #f0e0b8;
+  background: #fffaf0;
+}
+
 .options {
   display: flex;
   flex-direction: column;
@@ -478,6 +540,19 @@ body {
   opacity: 0.45;
 }
 
+/* 被「五五开」打掉的选项：划掉它，一眼看出不用选了 */
+.option.is-gone {
+  opacity: 0.32;
+  text-decoration: line-through;
+}
+
+/* 「看答案」圈出来的正确项：金色描边提示，但保持可点，还是要自己选对 */
+.option.is-revealed {
+  border-color: #f0c260;
+  background: #fffbf0;
+  box-shadow: 0 0 0 3px rgba(240, 194, 96, 0.22);
+}
+
 /* 反馈文字 */
 .feedback {
   min-height: 26px;
@@ -495,6 +570,12 @@ body {
 
 .feedback.is-err {
   color: var(--err);
+  font-weight: 600;
+}
+
+/* 道具提示：既不是答对也不是答错，用主题蓝区分开 */
+.feedback.is-item {
+  color: var(--ty-blue-deep);
   font-weight: 600;
 }
 
@@ -985,6 +1066,29 @@ input[type="checkbox"] {
 .me-row b {
   font-size: 15px;
   color: var(--ty-blue-deep);
+}
+
+/* 改昵称：输入框吃掉剩余宽度，保存按钮按内容宽 */
+.nick-edit {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.nick-input {
+  /* 用 flex:1（basis 0）而不是 auto —— .field-input 自带 width:100%，
+     以宽度做基准会把保存按钮挤出去 */
+  flex: 1;
+  min-width: 0;
+}
+
+.nick-save {
+  flex: 0 0 auto;
+  width: auto;
+  padding: 12px 20px;
+  font-size: 14px;
+  letter-spacing: 1px;
 }
 
 .me-items-title {
