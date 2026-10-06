@@ -615,6 +615,14 @@ const REVIEW_JUMP_MIN = 6;
    全角下划线在每个字框里居中，连排会显示成「＿ ＿」一堆断横，半角才会连成一条线 */
 const BLANK_MARK = "____";
 
+/* 答题页能用的消耗型道具。code 必须和 items 表里的一致，
+   效果各自实现在 applyHint5050 / applyReveal / applyTolerance 里 */
+const USABLE_ITEMS = [
+  { code: "hint5050", label: "五五开", tip: "去掉两个错误选项" },
+  { code: "tolerance", label: "容错券", tip: "本题答错不算错" },
+  { code: "reveal", label: "看答案", tip: "标出正确答案" }
+];
+
 /* 限时狂飙的反馈停留时间要短，不然时间都耗在等动画上 */
 const RUSH_DELAY_CORRECT = 420;
 const RUSH_DELAY_WRONG = 780;
@@ -738,6 +746,7 @@ const el = {
   shopSub: document.getElementById("shop-sub"),
   authBox: document.getElementById("auth-box"),
   meBox: document.getElementById("me-box"),
+  authNick: document.getElementById("auth-nick"),
   authEmail: document.getElementById("auth-email"),
   authPass: document.getElementById("auth-pass"),
   authTip: document.getElementById("auth-tip"),
@@ -745,11 +754,16 @@ const el = {
   btnRegister: document.getElementById("btn-register"),
   btnLogout: document.getElementById("btn-logout"),
   btnSync: document.getElementById("btn-sync"),
-  meName: document.getElementById("me-name"),
+  nickInput: document.getElementById("nick-input"),
+  btnSaveNick: document.getElementById("btn-save-nick"),
+  nickTip: document.getElementById("nick-tip"),
   mePoints: document.getElementById("me-points"),
   mePending: document.getElementById("me-pending"),
   meItems: document.getElementById("me-items"),
-  shopList: document.getElementById("shop-list")
+  shopList: document.getElementById("shop-list"),
+
+  /* 答题页的道具栏 */
+  itemBar: document.getElementById("item-bar")
 };
 
 /* 当前这一轮的状态 */
@@ -766,6 +780,9 @@ const state = {
   rushTicker: 0,     /* 狂飙模式倒计时器的编号 */
   questionStart: 0,  /* 当前这题的开始时刻，用来算答题耗时（服务端会看这个防脚本） */
   lastEarned: 0,     /* 刚结束那一轮的得分，结算页要显示 */
+  tolerated: 0,      /* 本局用了容错券、答错也不算错的题数 */
+  toleranceOn: false,/* 本题的容错券是否已经生效 */
+  usedItems: {},     /* 本题哪些道具已经用过（切题时清空，免得一题刷好几个） */
   locked: false,     /* 判断与切题期间锁住输入，避免重复提交 */
   timer: 0           /* 自动进入下一题的定时器编号 */
 };
@@ -1369,6 +1386,149 @@ function stemOf(item, forPrint) {
   return prefix + item.q;
 }
 
+/* ---------- 答题页道具 ---------- */
+
+/* 本地缓存里这个道具还剩几个 */
+function itemCountOf(code) {
+  const list = LocalStore.inventory();
+  for (let i = 0; i < list.length; i++) {
+    if (list[i].code === code) return Number(list[i].count) || 0;
+  }
+  return 0;
+}
+
+/* 当前这道题的选项按钮 */
+function optionButtons() {
+  return el.options.querySelectorAll(".option");
+}
+
+/* 道具栏上的临时提示（复用答题反馈那一行） */
+function showItemTip(text) {
+  el.feedback.textContent = text;
+  el.feedback.className = "feedback is-item";
+}
+
+/*
+ * 画答题页的道具栏。
+ * 只有登录了、而且手上真有道具才显示 —— 没登录时连库存都无从谈起。
+ * 记忆翻牌没有选项，不需要道具栏。
+ */
+function renderItemBar() {
+  if (!el.itemBar) return;
+
+  const usable = Backend.configured() && LocalStore.isLoggedIn() && state.mode !== "memory";
+  const owned = usable ? USABLE_ITEMS.filter(function (it) {
+    return itemCountOf(it.code) > 0 || state.usedItems[it.code];
+  }) : [];
+
+  el.itemBar.innerHTML = "";
+  el.itemBar.hidden = owned.length === 0;
+  if (owned.length === 0) return;
+
+  owned.forEach(function (it) {
+    const used = !!state.usedItems[it.code];
+
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "item-btn" + (used ? " is-used" : "");
+    btn.setAttribute("data-code", it.code);
+    btn.disabled = used || state.locked;
+    btn.title = it.tip;
+
+    const name = document.createElement("span");
+    name.className = "item-name";
+    name.textContent = it.label;
+
+    const num = document.createElement("span");
+    num.className = "item-count";
+    num.textContent = "×" + itemCountOf(it.code);
+
+    btn.appendChild(name);
+    btn.appendChild(num);
+    btn.addEventListener("click", function () { useQuestionItem(it.code); });
+
+    el.itemBar.appendChild(btn);
+  });
+}
+
+/*
+ * 用一个道具。
+ * 先在服务端扣（扣成功了才有效果）—— 反过来的话，本地已经生效、
+ * 服务端却没扣成，等于白嫖一个道具。
+ */
+async function useQuestionItem(code) {
+  if (state.locked) return;
+
+  const info = USABLE_ITEMS.filter(function (it) { return it.code === code; })[0];
+  if (!info) return;
+
+  if (state.usedItems[code]) { showItemTip(info.label + "这道题已经用过了"); return; }
+  if (itemCountOf(code) <= 0) { showItemTip("这个道具已经用完了"); return; }
+
+  const token = await authToken();
+  if (!token) { showItemTip("登录已过期，重新登录一下吧"); return; }
+
+  const r = await Backend.useItem(token, code);
+  if (!r.ok) {
+    showItemTip(r.error || "道具用不了");
+    renderItemBar();
+    return;
+  }
+
+  LocalStore.useOneItem(code);
+  state.usedItems[code] = true;
+
+  const item = state.deck[state.index];
+  if (code === "hint5050") applyHint5050(item);
+  else if (code === "reveal") applyReveal(item);
+  else if (code === "tolerance") state.toleranceOn = true;
+
+  renderItemBar();
+  showItemTip(info.label + "已生效 —— " + info.tip);
+}
+
+/* 五五开：把两个错误选项打掉，正确项留着 */
+function applyHint5050(item) {
+  const answer = rightAnswer(item);
+  const buttons = optionButtons();
+  const wrongs = [];
+
+  for (let i = 0; i < buttons.length; i++) {
+    if (buttons[i].disabled) continue;
+    if (buttons[i].getAttribute("data-value") === answer) continue;
+    wrongs.push(buttons[i]);
+  }
+
+  shuffle(wrongs).slice(0, 2).forEach(function (btn) {
+    btn.disabled = true;
+    btn.classList.add("is-gone");
+  });
+}
+
+/* 看答案：把正确项圈出来，但不禁用 —— 还是要自己点它才算答对 */
+function applyReveal(item) {
+  const answer = rightAnswer(item);
+  const buttons = optionButtons();
+
+  for (let i = 0; i < buttons.length; i++) {
+    if (buttons[i].getAttribute("data-value") === answer) {
+      buttons[i].classList.add("is-revealed");
+    }
+  }
+}
+
+/* 揭晓：选中的那条标红，正确的那条同时标绿，其余淡出 */
+function revealAnswer(buttons, chosen, answer) {
+  for (let i = 0; i < buttons.length; i++) {
+    if (buttons[i] === chosen) continue;
+    if (buttons[i].getAttribute("data-value") === answer) {
+      buttons[i].classList.add("is-right");
+    } else {
+      buttons[i].classList.add("is-dim");
+    }
+  }
+}
+
 /* ---------- 游戏流程 ---------- */
 
 /* 洗牌，返回打乱后的新数组，不改动原数组 */
@@ -1418,8 +1578,11 @@ function renderQuestion() {
 
   clearFeedback();
   state.locked = false;
+  state.toleranceOn = false;   /* 容错券只保这一题 */
+  state.usedItems = {};        /* 每种道具每题最多用一次 */
   state.questionStart = Date.now();   /* 服务端要拿答题耗时判断是不是脚本刷的 */
   renderOptions(item);
+  renderItemBar();
 }
 
 /* 清空并重新生成选项按钮 */
@@ -1477,6 +1640,9 @@ function startGame() {
   state.score = 0;
   state.rightCount = 0;
   state.answered = 0;
+  state.tolerated = 0;
+  state.toleranceOn = false;
+  state.usedItems = {};
   state.locked = false;
 
   /* 限时狂飙不按题数出卷，而是把整库洗一遍，答到时间结束为止 */
@@ -1539,10 +1705,11 @@ function chooseOption(btn, value, item) {
   if (state.locked) return;
   state.locked = true;
 
-  const buttons = el.options.querySelectorAll(".option");
+  const buttons = optionButtons();
   for (let i = 0; i < buttons.length; i++) {
     buttons[i].disabled = true;
   }
+  renderItemBar();   /* 已经揭晓了，道具按钮跟着锁上 */
 
   const answer = rightAnswer(item);
   state.answered++;
@@ -1559,21 +1726,23 @@ function chooseOption(btn, value, item) {
     el.feedback.textContent = feedbackText(true, item, answer);
     el.feedback.className = "feedback is-ok";
     state.timer = setTimeout(goNext, delayFor(true));
+    return;
+  }
+
+  btn.classList.add("is-wrong");
+  revealAnswer(buttons, btn, answer);
+
+  if (state.toleranceOn) {
+    /* 用了容错券：选项还是错的，但这一题不算错 —— 不加分，
+       正确率的分母里也把它剔掉（tolerated 在结算时扣） */
+    state.tolerated++;
+    el.feedback.textContent = "容错券生效，这题不算错。" + feedbackText(false, item, answer).replace("✗ ", "");
+    el.feedback.className = "feedback is-item";
   } else {
-    btn.classList.add("is-wrong");
-    /* 同时把正确答案标绿，其余几条淡下去，方便对照 */
-    for (let i = 0; i < buttons.length; i++) {
-      if (buttons[i] === btn) continue;
-      if (buttons[i].getAttribute("data-value") === answer) {
-        buttons[i].classList.add("is-right");
-      } else {
-        buttons[i].classList.add("is-dim");
-      }
-    }
     el.feedback.textContent = feedbackText(false, item, answer);
     el.feedback.className = "feedback is-err";
-    state.timer = setTimeout(goNext, delayFor(false));
   }
+  state.timer = setTimeout(goNext, delayFor(false));
 }
 
 /* ---------- 限时狂飙 ---------- */
@@ -1610,13 +1779,16 @@ function finishGame() {
   stopRushTimer();
   state.locked = true;
 
-  /* 狂飙模式是中途结束的，分母得用作答题数而不是整库题数 */
-  const total = state.answered > 0 ? state.answered : state.deck.length;
+  /* 狂飙模式是中途结束的，分母得用作答题数而不是整库题数；
+     被容错券抵消掉的那几题不算进分母 */
+  const answered = state.answered > 0 ? state.answered : state.deck.length;
+  const total = Math.max(0, answered - state.tolerated);
   const accuracy = total === 0 ? 0 : Math.round((state.rightCount / total) * 100);
 
   el.finalScore.textContent = state.score;
   el.finalAcc.textContent = accuracy + "%";
-  el.finalRight.textContent = state.rightCount + " / " + total + " 题";
+  el.finalRight.textContent = state.rightCount + " / " + total + " 题"
+    + (state.tolerated > 0 ? "（容错 " + state.tolerated + " 题）" : "");
   el.finalRank.textContent = rankText(accuracy);
 
   /* 本局积分与总积分 */
@@ -2113,6 +2285,15 @@ const Backend = (typeof Api !== "undefined") ? Api : {
 let SHOP_ITEMS = [];
 const SHOP_META = {};
 
+/* 先用上次存下来的对照表预热一下：这样商品目录没拉到时，
+   「已拥有的物品」也能显示「五五开提示」而不是「hint5050」 */
+(function warmShopMeta() {
+  const saved = LocalStore.itemMeta();
+  Object.keys(saved).forEach(function (code) {
+    SHOP_META[code] = saved[code];
+  });
+})();
+
 /*
  * 参与计分的玩法名。
  * 限时狂飙用的就是接歌词那套题，所以按 line 记，服务端才查得到答案；
@@ -2292,7 +2473,13 @@ async function loadShop(manual, force) {
   }
 
   SHOP_ITEMS = r.data;
-  r.data.forEach(function (it) { SHOP_META[it.code] = it; });
+  const names = {};
+  r.data.forEach(function (it) {
+    SHOP_META[it.code] = it;
+    names[it.code] = { code: it.code, name: it.name, category: it.category };
+  });
+  /* 存一份对照表，下次商品目录拉不到也能显示中文名 */
+  LocalStore.setItemMeta(names);
 
   /* 目录到手之后，两个视图都要按新数据重画一遍 */
   renderShop();
@@ -2304,6 +2491,11 @@ async function loadShop(manual, force) {
 function setAuthTip(text, good) {
   el.authTip.textContent = text || "";
   el.authTip.className = "form-tip" + (good ? " is-ok" : "");
+}
+
+function setNickTip(text, good) {
+  el.nickTip.textContent = text || "";
+  el.nickTip.className = "form-tip" + (good ? " is-ok" : "");
 }
 
 let shopTipTimer = 0;
@@ -2336,6 +2528,7 @@ function showUserView(name) {
 function openUser(view) {
   el.user.hidden = false;
   setAuthTip("");
+  setNickTip("");
   refreshPointsUI();
   showUserView(view || "account");
 
@@ -2369,7 +2562,10 @@ function renderAccount() {
 
   if (!logged) return;
 
-  el.meName.textContent = LocalStore.nickname();
+  /* 正在输入框里打字时别把内容顶掉 */
+  if (!document.activeElement || document.activeElement !== el.nickInput) {
+    el.nickInput.value = LocalStore.nickname();
+  }
   el.mePoints.textContent = String(LocalStore.points());
   el.mePending.textContent = LocalStore.pendingCount() + " 条";
   renderOwnedItems();
@@ -2564,7 +2760,7 @@ async function doRegister() {
   if (pass.length < 6) { setAuthTip("密码至少 6 位", false); return; }
 
   setAuthTip("注册中……", true);
-  const r = await Backend.signUp(email, pass);
+  const r = await Backend.signUp(email, pass, el.authNick.value.trim());
   if (!r.ok) { setAuthTip(r.error || "注册失败", false); return; }
 
   /* 项目开了邮箱确认时不会直接给会话，得先去邮箱点链接 */
@@ -2584,8 +2780,37 @@ async function doLogout() {
   if (token) await Backend.signOut(token);
   LocalStore.clearSession();
   setAuthTip("已退出登录。本机记录还在，下次登录会继续同步", true);
+  setNickTip("");
   refreshPointsUI();
   renderAccount();
+}
+
+/*
+ * 改昵称。
+ * 先写服务端、成功了再改本地 —— 反过来的话服务端失败，界面会显示一个并不存在的名字。
+ * 服务端对 profiles 只开放了 nickname 这一列可写，所以这里也只能改这一列。
+ */
+async function saveNickname() {
+  if (!Backend.configured()) { setNickTip("还没配置后端，现在只能本地玩", false); return; }
+  if (!LocalStore.isLoggedIn()) { setNickTip("先登录才能改昵称哦", false); return; }
+
+  const name = el.nickInput.value.trim();
+  if (!name) { setNickTip("昵称不能是空的", false); return; }
+  if (name === LocalStore.nickname()) { setNickTip("昵称没变哦", true); return; }
+  if (name.length > 12) { setNickTip("昵称最多 12 个字", false); return; }
+
+  const session = LocalStore.session();
+  const token = await authToken();
+  if (!token || !session) { setNickTip("登录已过期，重新登录一下吧", false); return; }
+
+  setNickTip("保存中……", true);
+  const r = await Backend.updateNickname(token, session.userId, name);
+  if (!r.ok) { setNickTip(r.error || "改昵称失败", false); return; }
+
+  LocalStore.setNickname(r.data.nickname);
+  el.nickInput.value = r.data.nickname;
+  refreshPointsUI();
+  setNickTip("改好啦，以后就叫你「" + r.data.nickname + "」", true);
 }
 
 /* ---------- 绑定事件 ---------- */
@@ -2618,6 +2843,15 @@ el.btnLogin.addEventListener("click", doLogin);
 el.btnRegister.addEventListener("click", doRegister);
 el.btnLogout.addEventListener("click", doLogout);
 el.btnSync.addEventListener("click", function () { syncNow(true); });
+el.btnSaveNick.addEventListener("click", saveNickname);
+
+/* 昵称框里按回车也保存 */
+el.nickInput.addEventListener("keydown", function (event) {
+  if (event.key === "Enter") {
+    event.preventDefault();
+    saveNickname();
+  }
+});
 
 /* 密码框里按回车直接登录 */
 el.authPass.addEventListener("keydown", function (event) {
