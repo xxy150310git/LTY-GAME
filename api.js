@@ -165,6 +165,24 @@ const Api = (function () {
   }
 
   /*
+   * 改昵称。
+   * 服务端对这一列单独开了 update 权限（其余列一律不可写），
+   * 所以这里只能改 nickname，改分数是改不动的。
+   */
+  async function updateNickname(accessToken, userId, nickname) {
+    const r = await call("/rest/v1/profiles?id=eq." + encodeURIComponent(userId), {
+      method: "PATCH",
+      auth: accessToken,
+      headers: { Prefer: "return=representation" },
+      body: { nickname: nickname }
+    });
+    if (!r.ok) return { ok: false, offline: r.offline, error: r.error };
+
+    const row = (Array.isArray(r.data) && r.data[0]) || null;
+    return { ok: true, data: { nickname: (row && row.nickname) || nickname } };
+  }
+
+  /*
    * 上传一批答题流水让服务端复核。
    * items 形如 [{ id, mode, choice, ms }]；
    * batch 是这一批的批次号，服务端靠它做幂等，重复上传不会重复入账。
@@ -218,6 +236,7 @@ const Api = (function () {
     refreshSession: refreshSession,
     signOut: signOut,
     me: me,
+    updateNickname: updateNickname,
     syncRuns: syncRuns,
     shopItems: shopItems,
     buyItem: buyItem,
