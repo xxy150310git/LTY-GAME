@@ -8,8 +8,8 @@
  * localOnly 为 true 表示没配后端：游戏照常玩，分数只存本机。
  */
 window.LTY_CONFIG = {
-  supabaseUrl: "",
-  supabaseAnonKey: "",
-  localOnly: true,
-  builtAt: "2026-10-04T10:46:01.961Z"
+  supabaseUrl: "https://akqzhbnpxazuhefktmpk.supabase.co",
+  supabaseAnonKey: "sb_publishable_m-X3wSZjX6C_WcmoFEMNkw_Eqekr0MF",
+  localOnly: false,
+  builtAt: "2026-10-06T08:56:53.986Z"
 };
